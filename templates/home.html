@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %} Home {% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <h2>Selamat Datang!</h2>
+        {% if session['nama'] %}
+            <p>You login as {{ session['nama']}}</p>
+            <a href="{{ url_for('logout') }}">
+                <button>Logout</button>
+            </a>
+        {% else %}
+            <p>Not login yet</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
