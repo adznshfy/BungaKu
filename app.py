@@ -87,7 +87,7 @@ def login():
                 return redirect(url_for('home'))
 
         else:
-            error = "Gagal login. Cek kembali email atau password kamu."
+            error = "Gagal login. Cek kembali email atau password Anda."
 
     return render_template("login.html", error=error)
 
