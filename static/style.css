@@ -1,7 +1,6 @@
-/* Import Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-/* Reset & base */
+/* Background */
 * {
     margin: 0;
     padding: 0;
@@ -14,6 +13,7 @@ body {
     color: #2d3436;
     min-height: 100vh;
 }
+
 
 /* Navbar */
 .navbar {
