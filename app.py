@@ -10,13 +10,16 @@ app.config['MYSQL_DB'] = 'flaskdb_new'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 
+
 @app.route('/welcome')
 def welcome():
     return render_template("welcome.html")
 
+
 @app.route('/')
 def home():
     return redirect(url_for('welcome'))
+
 
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -91,6 +94,7 @@ def login():
 
     return render_template("login.html", error=error)
 
+
 @app.route('/profile', methods=["GET", "POST"])
 def profile():
     if 'id_user' not in session:
@@ -131,7 +135,6 @@ def profile():
     return render_template("profile.html", profile=profile)
 
 
-
 @app.route('/logout')
 def logout():
     session.clear()
@@ -160,17 +163,20 @@ def choose_role():
 
     return render_template('choose_role.html')
 
+
 @app.route('/home-buyer')
 def home_buyer():
     if session.get('role') == 'pembeli':
         return render_template('home_buyer.html')
     return redirect(url_for('home_buyer.html'))
 
+
 @app.route('/home-seller')
 def home_seller():
     if session.get('role') == 'penjual':
         return render_template('home_seller.html')
     return redirect(url_for('home_seller.html'))
+
 
 @app.route('/profile-changed')
 def profile_changed():
