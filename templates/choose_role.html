@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+
+<div class="form-container">
+    <div class="role-selection">
+        <h2>Login sebagai...</h2>
+        <form action="{{ url_for('choose_role') }}" method="POST" class="role-form">
+            <div class="role-option">
+                <img src="{{ url_for('static', filename='images/buyer.png') }}" alt="Pembeli" class="role-image">
+                <button name="role" value="pembeli">Masuk sebagai Pembeli</button>
+            </div>
+            <div class="role-option">
+                <img src="{{ url_for('static', filename='images/seller.png') }}" alt="Penjual" class="role-image">
+                <button name="role" value="penjual">Masuk sebagai Penjual</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

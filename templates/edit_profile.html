@@ -1,44 +1,9 @@
 {% extends "layout.html" %}
+{% block title %}Profil Diubah{% endblock %}
 
 {% block content %}
-
-<div class="container">
-        <h2>Edit Profil</h2>
-        <form method="POST">
-            <label>Nama</label>
-            <input type="text" name="nama" value="{{ profile.nama }}" required>
-
-            <label>Nama Lengkap</label>
-            <input type="text" name="nama_lengkap" value="{{ profile.nama_lengkap }}" required>
-
-            <label>NIM</label>
-            <input type="text" name="nim" value="{{ profile.nim }}" required>
-
-            <label>Alamat</label>
-            <input type="text" name="alamat" value="{{ profile.alamat }}">
-
-            <label>No Telepon</label>
-            <input type="text" name="no_telp" value="{{ profile.no_telp }}">
-
-            <label>Email</label>
-            <input type="email" name="email" value="{{ profile.email }}">
-
-            <label>Payment</label>
-            <input type="text" name="payment" value="{{ profile.payment }}">
-
-            <label>Divisi</label>
-            <select name="id_divisi">
-                {% for d in divisi %}
-                    <option value="{{ d.id_divisi }}" {% if d.id_divisi == profile.id_divisi %}selected{% endif %}>
-                        {{ d.nama_divisi }}
-                    </option>
-                {% endfor %}
-            </select>
-
-            <button type="submit">Simpan Perubahan</button>
-        </form>
-
-        <a href="{{ url_for('profile') }}" class="back-link">← Kembali ke Profil</a>
+<div class="profile-changed">
+    <h3>Profil kamu berhasil diperbarui!</h3>
+    <a href="{{ url_for('home') }}"><button>Kembali ke Home</button></a>
 </div>
-
 {% endblock %}

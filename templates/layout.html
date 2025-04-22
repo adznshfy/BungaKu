@@ -8,21 +8,27 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="brand">E-Commerce</div>
+        <div class="brand">💐 Toko Bunga Indah 💐</div>
 
-        <button class="toggle-button" id="navToggle">
-            ☰
-        </button>
+        <button class="toggle-button" id="navToggle">☰</button>
 
         <div class="nav-links" id="navLinks">
-            <a href="#">Home</a>
-            {% if session['name'] %}
-                <a href="/logout">Logout</a>
+            {% if session.get('role') == 'pembeli' %}
+                <a href="{{ url_for('home_buyer') }}">Home</a>
+                <a href="{{ url_for('home_buyer') }}">Dashboard Pembeli</a>
+                <a href="{{ url_for('profile') }}">Profil</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+
+            {% elif session.get('role') == 'penjual' %}
+                <a href="{{ url_for('home_seller') }}">Home</a>
+                <a href="{{ url_for('home_seller') }}">Dashboard Penjual</a>
+                <a href="{{ url_for('profile') }}">Profil</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+
             {% else %}
-                <a href="/login">Login</a>
-                <a href="/register">Register</a>
-                <a href="{{ url_for('member') }}"><button>Member List</button></a>
-                <a href="/profile">Profile</a>
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
             {% endif %}
         </div>
     </nav>
@@ -32,11 +38,23 @@
     </div>
 
     <script>
+        // Menu toggle for responsive nav
         const navToggle = document.getElementById("navToggle");
         const navLinks = document.getElementById("navLinks");
 
         navToggle.addEventListener("click", () => {
             navLinks.classList.toggle("active");
+        });
+
+        // Highlight active link
+        const currentPath = window.location.pathname;
+        const links = document.querySelectorAll(".nav-links a");
+
+        links.forEach(link => {
+            const linkPath = new URL(link.href).pathname;
+            if (currentPath === linkPath) {
+                link.classList.add("active-link");
+            }
         });
     </script>
 </body>

@@ -1,33 +1,17 @@
 {% extends "layout.html" %}
-
-{% block title %} Profile {% endblock %}
+{% block title %}Profil Saya{% endblock %}
 
 {% block content %}
+<h2>Profil Saya</h2>
 
-<div class="row">
-    <div class="col-md-6 col-md-offset-3">
-        <form method="POST">
-            <h2>Profile</h2>
-            <input type="text" name="nama" placeholder="Nama" required>
-            <input type="text" name="nama_lengkap" placeholder="Nama Lengkap" required>
-            <input type="text" name="nim" placeholder="NIM" required>
-            <input type="text" name="alamat" placeholder="Alamat">
-            <input type="text" name="no_telp" placeholder="No Telepon">
-            
-            <label for="divisi">Divisi:</label>
-            <select name="id_divisi" required>
-                <option value="">-- Pilih Divisi --</option>
-                {% for d in divisi %}
-                    <option value="{{ d.id_divisi }}">{{ d.nama_divisi }}</option>
-                {% endfor %}
-            </select><br>
-
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="text" name="payment" placeholder="Payment">
-
-            <button type="submit">Simpan</button>
-        </form>
-    </div>
-</div>
-
+<form method="POST">
+    <input type="text" name="nama" placeholder="Nama" value="{{ profile.nama if profile else '' }}" required>
+    <input type="text" name="nama_lengkap" placeholder="Nama Lengkap" value="{{ profile.nama_lengkap if profile else '' }}" required>
+    <input type="text" name="no_telp" placeholder="No Telepon" value="{{ profile.no_telp if profile else '' }}">
+    <input type="email" name="email" placeholder="Email" value="{{ profile.email if profile else '' }}" required>
+    <input type="text" name="alamat" placeholder="Alamat" value="{{ profile.alamat if profile else '' }}">
+    <input type="text" name="payment" placeholder="Metode Pembayaran" value="{{ profile.payment if profile else '' }}">
+    <button type="submit">Simpan</button>
+</form>
 {% endblock %}
+

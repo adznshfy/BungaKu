@@ -4,135 +4,178 @@ import bcrypt
 
 app = Flask(__name__)
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MUSQL_USER'] = 'jihaa'
+app.config['MUSQL_USER'] = 'jihaannaswa'
 app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'flaskdb'
+app.config['MYSQL_DB'] = 'flaskdb_new'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 
+@app.route('/welcome')
+def welcome():
+    return render_template("welcome.html")
+
 @app.route('/')
 def home():
-        return render_template("home.html")
+    return redirect(url_for('welcome'))
 
-@app.route('/register', methods=["GET","POST"])
+@app.route('/register', methods=["GET", "POST"])
 def register():
     if request.method == 'GET':
         return render_template("register.html")
     else:
-        nim = request.form['nim']
         nama = request.form['nama']
+        alamat = request.form['alamat']
         email = request.form['email']
-        programstudi = request.form['programstudi']
+        phone = request.form['phone']
         password = request.form['password'].encode('utf-8')
         hash_password = bcrypt.hashpw(password, bcrypt.gensalt())
-        
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users (nim,nama,email,programstudi,password) VALUES (%s,%s,%s,%s,%s)",(nim,nama,email,programstudi,hash_password,))
+        role = None
+
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+        cur.execute("""
+            INSERT INTO users (nama, alamat, email, phone, password, role)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (nama, alamat, email, phone, hash_password, role))
+
         mysql.connection.commit()
+
+        cur.execute("SELECT LAST_INSERT_ID() as id_user")
+        id_user = cur.fetchone()['id_user']
+
+        cur.execute("""
+            INSERT INTO profile (nama, email, alamat, no_telp, id_user)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nama, email, alamat, phone, id_user))
+
+        mysql.connection.commit()
+        cur.close()
+
+        session['id_user'] = id_user
         session['nama'] = nama
         session['email'] = email
-        return redirect(url_for("home"))
+
+        return redirect(url_for('login'))
+
     
-@app.route('/login',methods=["GET","POST"])
+@app.route('/login', methods=["GET", "POST"])
 def login():
+    error = None
     if request.method == "POST":
-        nim = request.form['nim']
         email = request.form['email']
         password = request.form['password'].encode('utf-8')
-        
+
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute("SELECT * FROM users WHERE email=%s",(email,))
+        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
         user = cur.fetchone()
         cur.close()
-        
-        if len(user) > 0:
-            if bcrypt.hashpw(password, user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
-               session[email] = user['email']
-               return render_template("home.html")
+
+        if user and bcrypt.checkpw(password, user['password'].encode('utf-8')):
+            session['id_user'] = user['id_user']
+            session['nama'] = user['nama']
+            session['email'] = user['email']
+            session['role'] = user.get('role')
+
+            if not user.get('role'):
+                return redirect(url_for('choose_role'))
+   
+            if user['role'] == 'pembeli':
+                return redirect(url_for('home_buyer'))
+            elif user['role'] == 'penjual':
+                return redirect(url_for('home_seller'))
+            else:
+                return redirect(url_for('home'))
+
         else:
-            return "Error password or user not found"
-    else:
-        return render_template("login.html")
+            error = "Gagal login. Cek kembali email atau password kamu."
+
+    return render_template("login.html", error=error)
+
+@app.route('/profile', methods=["GET", "POST"])
+def profile():
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
+    # ambil profile user
+    cur.execute("SELECT * FROM profile WHERE id_user = %s", (session['id_user'],))
+    profile = cur.fetchone()
+
+    if request.method == "POST":
+        nama = request.form['nama']
+        nama_lengkap = request.form['nama_lengkap']
+        no_telp = request.form['no_telp']
+        email = request.form['email']
+        alamat = request.form['alamat']
+        payment = request.form['payment']
+
+        if profile:
+            cur.execute("""
+                UPDATE profile SET 
+                nama=%s, nama_lengkap=%s, no_telp=%s, email=%s, alamat=%s, payment=%s
+                WHERE id_user=%s
+            """, (nama, nama_lengkap, no_telp, email, alamat, payment, session['id_user']))
+        else:
+            cur.execute("""
+                INSERT INTO profile 
+                (nama, nama_lengkap, no_telp, email, alamat, payment, id_user)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (nama, nama_lengkap, no_telp, email, alamat, payment, session['id_user']))
+
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('profile_changed'))
+
+    cur.close()
+    return render_template("profile.html", profile=profile)
+
+
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return render_template("home.html")
-
-@app.route('/member')
-def member():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT nim, nama, email, programstudi FROM users")
-    member = cur.fetchall()
-    cur.close()
+    return render_template("welcome.html")
     
-    return render_template('member.html', member=member)
 
-    
-@app.route('/profile', methods=["GET", "POST"])
-def profile():
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT id_divisi, nama_divisi FROM divisi")
-    divisi = cur.fetchall()
+@app.route('/choose-role', methods=["GET", "POST"])
+def choose_role():
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
 
     if request.method == 'POST':
-        nama = request.form['nama']
-        nama_lengkap = request.form['nama_lengkap']
-        nim = request.form['nim']
-        alamat = request.form['alamat']
-        no_telp = request.form['no_telp']
-        id_divisi = request.form['id_divisi']
-        email = request.form['email']
-        payment = request.form['payment']
+        role = request.form['role']
 
-        cur.execute("""INSERT INTO profile 
-            (nama, nama_lengkap, nim, alamat, no_telp, id_divisi, email, payment)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-            (nama, nama_lengkap, nim, alamat, no_telp, id_divisi, email, payment)
-        )
+        cur = mysql.connection.cursor()
+        cur.execute("UPDATE users SET role=%s WHERE id_user=%s", (role, session['id_user']))
         mysql.connection.commit()
-        return redirect(url_for("edit_success"))
+        cur.close()
 
-    return render_template("profile.html", divisi=divisi)
+        session['role'] = role
 
-@app.route("/edit_profile", methods=["GET", "POST"])
-def edit_profile():
-    if 'id_user' not in session:
-        return redirect(url_for("login"))
+        if role == 'pembeli':
+            return redirect(url_for('home_buyer'))
+        elif role == 'penjual':
+            return redirect(url_for('home_seller'))
 
-    id_user = session['id_user']
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    return render_template('choose_role.html')
 
-    cur.execute("SELECT id_profile FROM users WHERE id_user = %s", (id_user,))
-    user_data = cur.fetchone()
+@app.route('/home-buyer')
+def home_buyer():
+    if session.get('role') == 'pembeli':
+        return render_template('home_buyer.html')
+    return redirect(url_for('home_buyer.html'))
 
-    if not user_data or not user_data['id_profile']:
-        return redirect(url_for("profile"))
+@app.route('/home-seller')
+def home_seller():
+    if session.get('role') == 'penjual':
+        return render_template('home_seller.html')
+    return redirect(url_for('home_seller.html'))
 
-    id_profile = user_data['id_profile']
+@app.route('/profile-changed')
+def profile_changed():
+    return render_template("profile_changed.html")
 
-    if request.method == "POST":
-
-        cur.execute("""
-            UPDATE profile SET ...
-            WHERE id_profile = %s
-        """, (..., id_profile))
-        mysql.connection.commit()
-
-        return redirect(url_for("edit_success"))
-
-    cur.execute("SELECT * FROM profile WHERE id_profile = %s", (id_profile,))
-    profile = cur.fetchone()
-
-    return render_template("edit_profile.html", profile=profile, divisi=divisi) # type: ignore
-
-
-@app.route("/edit_success")
-def edit_success():
-    return render_template("edit_success.html")
-
-                           
 if __name__ == '__main__':
     app.secret_key = "017#!NaswaJia)!!"
     app.run(debug=True)
