@@ -55,7 +55,7 @@ body {
     cursor: pointer;
 }
 
-
+/* Welcome Page */
 .landing {
     display: flex;
     justify-content: center;
@@ -167,7 +167,6 @@ form button:hover {
     border-radius: 12px;
     box-shadow: 0 3px 15px rgba(0,0,0,.05);
 }
-
 
 .form-container h2 {
     margin-bottom: 20px;
