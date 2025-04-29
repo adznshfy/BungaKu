@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verifikasi OTP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+
+<div class="form-container">
+    <h2>Verifikasi Email</h2>
+    <p>OTP telah dikirim ke <b>{{ email }}</b>. Masukkan kode OTP untuk melanjutkan.</p>
+    
+    <form method="POST" action="{{ url_for('email_bp.validate_otp') }}">
+        <input type="text" name="otp" placeholder="Masukkan Kode OTP" required maxlength="6">
+        <button type="submit">Verifikasi</button>
+    </form>
+</div>
+
+</body>
+</html>

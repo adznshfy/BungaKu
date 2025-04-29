@@ -14,8 +14,8 @@ body {
     min-height: 100vh;
 }
 
-
 /* Navbar */
+
 .navbar {
     background-color: #6c5ce7;
     padding: 15px 30px;
@@ -241,7 +241,56 @@ form button:hover {
     background-color: #a29bfe;
 }
 
-/* Responsive */
+.profile-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
+}
+
+.profile-left {
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
+}
+
+.profile-left input[type="file"] {
+    margin-bottom: 15px;
+}
+
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #dfe6e9;
+    display: block;
+    margin: 0 auto;
+}
+
+.profile-right {
+    flex: 2;
+    min-width: 280px;
+}
+
+@media (max-width: 768px) {
+    .profile-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-left, .profile-right {
+        max-width: 100%;
+    }
+}
+
+
 @media (max-width: 768px) {
     .nav-links {
         display: none;
@@ -267,3 +316,4 @@ form button:hover {
         gap: 20px;
     }
 }
+
