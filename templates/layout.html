@@ -1,78 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
-<body>
-    <nav class="navbar">
-        <div class="brand">💐 Toko Bunga Indah 💐</div>
-
-        <button class="toggle-button" id="navToggle">☰</button>
-
-        <div class="nav-links" id="navLinks">
-            {% if session.get('role') == 'pembeli' %}
-                <a href="{{ url_for('home_buyer') }}">Home</a>
-                <a href="{{ url_for('home_buyer') }}">Dashboard Pembeli</a>
-                <a href="{{ url_for('profile') }}">Profil</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
-
-            {% elif session.get('role') == 'penjual' %}
-                <a href="{{ url_for('home_seller') }}">Home</a>
-                <a href="{{ url_for('home_seller') }}">Dashboard Penjual</a>
-                <a href="{{ url_for('profile') }}">Profil</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
-
-            {% else %}
-                <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('login') }}">Login</a>
-                <a href="{{ url_for('register') }}">Register</a>
-            {% endif %}
-        </div>
-    </nav>
-
-    <div class="container">
-        {% block content %}{% endblock %}
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+  <!-- Navbar -->
+  <nav class="navbar">
+    <!-- Kiri: Toggle & Logo -->
+    <div class="nav-left">
+      <button id="navToggle" class="toggle-button">☰</button>
+      <span class="logo">🌸 <strong>Toko Bunga Indah</strong> 🌸</span>
+      <input type="text" class="search-bar" placeholder="Cari bunga...">
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Toko Bunga Indah. All rights reserved.</p>
+    <!-- Kanan: Profile & Dark Mode -->
+    <div class="nav-right">
+      <button id="themeToggle" class="toggle-button">
+        <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#333"></svg>
+      </button>
+      <div class="profile-menu">
+        <img id="profileIcon" src="{{ url_for('static', filename='images/profile.png') }}" alt="Profile" class="profile-icon" tabindex="0">
+        <div id="profileDropdown" class="dropdown-menu">
+          <a href="#">Pembelian</a>
+          <a href="#">Pengaturan</a>
+          <a href="{{ url_for('profile') }}">Edit Profil</a>
+          <a href="{{ url_for('logout') }}">Keluar</a>
         </div>
-    </footer>
+      </div>
+    </div>
+  </nav>
 
-    <script>
-        function previewFoto(event) {
-            const preview = document.getElementById('foto-preview');
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        }
+  <!-- Side Menu -->
+  <div class="nav-links" id="navLinks">
+    {% if session.get('role') == 'pembeli' %}
+      <a href="{{ url_for('home_buyer') }}">Home</a>
+      <a href="{{ url_for('home_buyer') }}">Dashboard Pembeli</a>
+      <a href="{{ url_for('profile') }}">Profil</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% elif session.get('role') == 'penjual' %}
+      <a href="{{ url_for('home_seller') }}">Home</a>
+      <a href="{{ url_for('home_seller') }}">Dashboard Penjual</a>
+      <a href="{{ url_for('seller_product') }}">Manajemen Produk</a>
+      <a href="{{ url_for('profile') }}">Profil</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('login') }}">Login</a>
+      <a href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </div>
 
-        const navToggle = document.getElementById("navToggle");
-        const navLinks = document.getElementById("navLinks");
+  <!-- Main Content -->
+  <main class="container" style="flex: 1">
+    {% block content %}{% endblock %}
+  </main>
 
-        navToggle.addEventListener("click", () => {
-            navLinks.classList.toggle("active");
-        });
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <strong>Toko Bunga Indah</strong> — Teman setia momenmu 💐
+      <div class="footer-info">
+        <span>📧 Email: naswajihaan@gmail.com</span>
+        <span>📷 IG: @tokobungaindah</span>
+        <span>☎️ WA: 0812-3456-7891</span>
+      </div>
+    </div>
+  </footer>
 
-        const currentPath = window.location.pathname;
-        const links = document.querySelectorAll(".nav-links a");
+  <script>
+    const navToggle = document.getElementById("navToggle");
+    const navLinks = document.getElementById("navLinks");
+    const profileIcon = document.getElementById("profileIcon");
+    const profileDropdown = document.getElementById("profileDropdown");
+    const themeToggleBtn = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
 
-        links.forEach(link => {
-            const linkPath = new URL(link.href).pathname;
-            if (currentPath === linkPath) {
-                link.classList.add("active-link");
-            }
-        });
-    </script>
+    navToggle.addEventListener("click", () => {
+      navLinks.classList.toggle("active");
+    });
+
+    profileIcon.addEventListener("click", (e) => {
+      e.stopPropagation();
+      profileDropdown.style.display =
+        profileDropdown.style.display === "flex" ? "none" : "flex";
+    });
+
+    window.addEventListener("click", (e) => {
+      if (!profileDropdown.contains(e.target)) {
+        profileDropdown.style.display = "none";
+      }
+    });
+
+    function applyThemeIcon(isDark) {
+      themeIcon.setAttribute("fill", isDark ? "white" : "#333");
+      themeIcon.innerHTML = isDark
+        ? '<path d="M21.64 13a9 9 0 01-11.64-11.64 9 9 0 1011.64 11.64z"/>'
+        : '<path d="M12 4.354a1 1 0 011 0l1.414.707a1 1 0 00.894 0l1.414-.707a1 1 0 011.414 1.414l-.707 1.414a1 1 0 000 .894l.707 1.414a1 1 0 01-1.414 1.414l-1.414-.707a1 1 0 00-.894 0l-1.414.707a1 1 0 01-1.414-1.414l.707-1.414a1 1 0 000-.894l-.707-1.414a1 1 0 011.414-1.414zM12 8a4 4 0 100 8 4 4 0 000-8z"/>';
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.body.classList.toggle("dark-mode");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      applyThemeIcon(isDark);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("theme");
+      const isDark = savedTheme === "dark";
+      if (isDark) document.body.classList.add("dark-mode");
+      applyThemeIcon(isDark);
+    });
+
+    themeToggleBtn.addEventListener("click", toggleDarkMode);
+  </script>
 </body>
 </html>

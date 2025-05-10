@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}Edit Produk{% endblock %}
+
+{% block content %}
+<h2>Edit Produk</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label>Nama:</label><br>
+    <input type="text" name="name" value="{{ produk.name }}" required><br>
+
+    <label>Deskripsi:</label><br>
+    <textarea name="description" required>{{ produk.description }}</textarea><br>
+
+    <label>Harga:</label><br>
+    <input type="number" name="price" value="{{ produk.price }}" required><br>
+
+    <label>Stok:</label><br>
+    <input type="number" name="stock" value="{{ produk.stock }}" required><br>
+
+    <label>Gambar (jika ingin ganti):</label><br>
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">Update</button>
+</form>
+{% endblock %}

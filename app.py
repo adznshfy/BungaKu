@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, render_template, redirect, request, url_for, session
 from flask_mysqldb import MySQL, MySQLdb
 from flask_mail import Mail
@@ -33,11 +34,17 @@ app.register_blueprint(email_verification.email_bp)
 
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Maksimum 2MB
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return "File terlalu besar. Maksimum 2MB.", 413
 
 @app.route('/welcome')
 def welcome():
@@ -131,7 +138,7 @@ def profile():
         foto = request.files.get('foto')
         filename = profile['foto'] if profile and profile.get('foto') else None
 
-        if foto and allowed_file(foto.filename):
+        if foto and foto.filename != '' and allowed_file(foto.filename):
             ext = foto.filename.rsplit('.', 1)[1].lower()
             filename = f"user_{session['id_user']}.{ext}"
             foto.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -155,7 +162,6 @@ def profile():
 
     cur.close()
     return render_template("profile.html", profile=profile)
-
 
 @app.route('/logout')
 def logout():
@@ -192,18 +198,96 @@ def home_buyer():
         return render_template('home_buyer.html')
     return redirect(url_for('home'))
 
-
 @app.route('/home-seller')
 def home_seller():
     if session.get('role') == 'penjual':
         return render_template('home_seller.html')
     return redirect(url_for('home'))
 
+# Menampilkan semua produk (tanpa filter user)
+@app.route('/seller-product')
+def seller_product():
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM products")  # tabel kamu: 'products'
+    daftar_produk = cursor.fetchall()
+    cursor.close()
+    return render_template('seller_products.html', daftar_produk=daftar_produk)
+
+# Tambah produk
+@app.route('/add-product', methods=['GET', 'POST'])
+def add_product():
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        price = request.form['price']
+        stock = request.form['stock']
+        image = None
+
+        if 'image' in request.files and request.files['image'].filename != '':
+            image_file = request.files['image']
+            image = image_file.filename
+            image_path = os.path.join('static/uploads', image)
+            image_file.save(image_path)
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO products (name, description, price, stock, image) VALUES (%s, %s, %s, %s, %s)",
+                       (name, description, price, stock, image))
+        mysql.connection.commit()
+        cursor.close()
+        return redirect(url_for('seller_product'))
+
+    return render_template('add_product.html')
+
+# Edit produk
+@app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    cursor = mysql.connection.cursor()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        price = request.form['price']
+        stock = request.form['stock']
+
+        if 'image' in request.files and request.files['image'].filename != '':
+            image_file = request.files['image']
+            image = image_file.filename
+            image_path = os.path.join('static/uploads', image)
+            image_file.save(image_path)
+            cursor.execute("UPDATE products SET name=%s, description=%s, price=%s, stock=%s, image=%s WHERE id=%s",
+                           (name, description, price, stock, image, product_id))
+        else:
+            cursor.execute("UPDATE products SET name=%s, description=%s, price=%s, stock=%s WHERE id=%s",
+                           (name, description, price, stock, product_id))
+
+        mysql.connection.commit()
+        cursor.close()
+        return redirect(url_for('seller_product'))
+
+    cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+    produk = cursor.fetchone()
+    cursor.close()
+    return render_template('edit_product.html', produk=produk)
+
+# Hapus produk
+@app.route('/delete-product/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
+    mysql.connection.commit()
+    cursor.close()
+    return redirect(url_for('seller_product'))
+
+
+
+@app.route('/edit-profile')
+def edit_profile():
+    # Logic untuk render edit profil di sini
+    return render_template("edit_profile.html")
 
 @app.route('/profile-changed')
 def profile_changed():
     return render_template("profile_changed.html")
-
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -9,11 +9,11 @@
             <label for="foto">Foto Profil</label>
             <input type="file" name="foto" id="foto" accept="image/*" onchange="previewFoto(event)">
         </div>
+
         <img id="foto-preview" class="profile-picture" 
-             style="margin-top: 10px; width: 120px; height: 120px; border-radius: 50%;" 
-             src="{{ url_for('static', filename='uploads/' + profile.foto) if profile and profile.foto else '' }}"
-             {% if not profile or not profile.foto %}style="display:none"{% endif %}>
-        
+            style="margin-top: 10px; width: 120px; height: 120px; border-radius: 50%;" 
+            src="{% if profile and profile.foto %}{{ url_for('static', filename='uploads/' + profile.foto) }}{% else %}{{ url_for('static', filename='images/default_profile.png') }}{% endif %}">
+       
         <div class="form-group">
             <label for="nama">Nama</label>
             <input type="text" name="nama" id="nama" value="{{ profile.nama if profile else '' }}" class="form-control">

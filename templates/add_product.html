@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}Tambah Produk{% endblock %}
+
+{% block content %}
+<h2>Tambah Produk</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label>Nama:</label><br>
+    <input type="text" name="name" required><br>
+
+    <label>Deskripsi:</label><br>
+    <textarea name="description" required></textarea><br>
+
+    <label>Harga:</label><br>
+    <input type="number" name="price" required><br>
+
+    <label>Stok:</label><br>
+    <input type="number" name="stock" required><br>
+
+    <label>Gambar (opsional):</label><br>
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">Simpan</button>
+</form>
+{% endblock %}
