@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block title %}Keranjang Belanja{% endblock %}
+
+{% block content %}
+<h2>Keranjang Belanja Anda</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+{% if cart_items %}
+    <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Produk</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Gambar</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Harga Satuan</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Kuantitas</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Subtotal</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">{{ item.name }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">
+                    {% if item.image %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.image) }}" alt="{{ item.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% endif %}
+                </td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.price|int }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                    <form action="{{ url_for('update_cart', product_id=item.product_id) }}" method="POST" style="display: inline-flex; align-items: center;">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.stock_available }}" style="width: 60px; text-align: center; margin-right: 5px;">
+                        <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Update</button>
+                    </form>
+                </td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.total_item_price|int }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                    <form action="{{ url_for('remove_from_cart', product_id=item.product_id) }}" method="POST">
+                        <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Total:</strong></td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Rp{{ total_cart_price|int }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    <div style="text-align: right; margin-top: 20px;">
+        <a href="{{ url_for('checkout') }}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Lanjutkan ke Checkout</a>
+    </div>
+{% else %}
+    <p>Keranjang belanja Anda kosong.</p>
+    <p><a href="{{ url_for('home_buyer') }}">Belanja Sekarang!</a></p>
+{% endif %}
+{% endblock %}

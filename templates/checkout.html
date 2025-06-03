@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<h2>Ringkasan Pesanan</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+{% if cart_items %}
+    <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Produk</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Harga Satuan</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Kuantitas</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">{{ item.name }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.price|int }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ item.quantity }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.total_item_price|int }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Total yang harus dibayar:</strong></td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Rp{{ total_cart_price|int }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3 style="margin-top: 30px;">Detail Pengiriman (contoh)</h3>
+    <p>Nama Penerima: {{ session['nama'] }}</p>
+    <p>Alamat: (Ini akan diambil dari profil pengguna, perlu ditambahkan query ke DB)</p>
+    <p>Nomor Telepon: (Ini akan diambil dari profil pengguna)</p>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <form action="{{ url_for('confirm_purchase') }}" method="POST">
+            <button type="submit" style="background-color: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">Selesaikan Pembelian</button>
+        </form>
+        <p style="margin-top: 10px;"><a href="{{ url_for('cart') }}">Kembali ke Keranjang</a></p>
+    </div>
+
+{% else %}
+    <p>Keranjang belanja Anda kosong.</p>
+    <p><a href="{{ url_for('home_buyer') }}">Belanja Sekarang!</a></p>
+{% endif %}
+{% endblock %}

@@ -2,8 +2,49 @@
 {% block title %}Home Pembeli{% endblock %}
 {% block content %}
 
-    <div class="dashboard-card">
-        <h2>Halo, {{ session['nama'] }}!</h2>
-        <p>Selamat datang sebagai pembeli.</p>
-    </div>
+<div class="dashboard-card">
+    <h2>Halo, {{ session['nama'] }}!</h2>
+    <p>Selamat datang sebagai pembeli.</p>
+</div>
+
+<hr>
+
+<h3>Daftar Produk</h3>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+    {% if produk %}
+        {% for p in produk %}
+            <div class="product-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; width: 220px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background-color: white;">
+                {% if p.image %}
+                <img src="{{ url_for('static', filename='uploads/' + p.image) }}" alt="{{ p.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;">
+                {% else %}
+                <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;">
+                {% endif %}
+                <p><strong>Nama:</strong> {{ p['name'] }}</p>
+                <p><strong>Harga:</strong> Rp{{ p['price']|int }}</p>
+                <p style="font-size: 0.9em; color: #777;">Stok: {{ p['stock'] }}</p>
+                <form method="POST" action="{{ url_for('add_to_cart', product_id=p['id']) }}">
+                    <button type="submit" style="background-color: #4a934a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">Tambah ke Keranjang</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Belum ada produk yang tersedia saat ini.</p>
+    {% endif %}
+</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{{ url_for('cart') }}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Lihat Keranjang Belanja</a>
+</div>
+
+
 {% endblock %}

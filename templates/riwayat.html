@@ -1,0 +1,56 @@
+ {% extends "layout.html" %}
+    {% block content %}
+
+    <div class="dashboard-card">
+        <h2>Riwayat Pembelian</h2>
+        {# Bagian untuk menampilkan pesan flash (sukses/error) #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        {# Memeriksa apakah ada data transaksi untuk ditampilkan #}
+        {% if transaksi %}
+        <div class="transaction-list">
+            {# Loop (ulang) setiap transaksi dalam list 'transaksi' yang dikirim dari app.py #}
+            {% for t in transaksi %}
+            <div class="transaction-item">
+                <div class="item-header">
+                    {# Menampilkan tanggal transaksi dengan format yang rapi #}
+                    <span class="transaction-date"><i class="fas fa-calendar-alt"></i> {{ t.tanggal }}</span>
+                    {# Menampilkan status transaksi (misal: "completed") #}
+                    <span class="transaction-status {{ t.status|lower }}">{{ t.status }}</span>
+                </div>
+                <div class="item-details">
+                    {# Menampilkan gambar produk, jika ada. Jika tidak, pakai gambar default. #}
+                    {% if t.product_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + t.product_image) }}" alt="{{ t.product_name }}" class="product-thumbnail">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" class="product-thumbnail">
+                    {% endif %}
+                    <div class="product-info">
+                        {# Menampilkan nama produk #}
+                        <p class="product-name"><strong>{{ t.product_name }}</strong></p>
+                        {# Menampilkan kuantitas dan harga per unit #}
+                        <p class="product-quantity">{{ t.jumlah }} x Rp{{ t.price_at_purchase|int }}</p>
+                    </div>
+                    <div class="total-price">
+                        Total: <span class="price-amount">Rp{{ t.total_harga|int }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        {# Pesan jika tidak ada riwayat pembelian #}
+        <p>Anda belum memiliki riwayat pembelian.</p>
+        <a href="{{ url_for('home_buyer') }}" class="btn btn-primary" style="margin-top: 20px;">Mulai Belanja</a>
+        {% endif %}
+    </div>
+{% endblock %}
+

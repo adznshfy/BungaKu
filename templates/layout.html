@@ -7,16 +7,13 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
-  <!-- Navbar -->
   <nav class="navbar">
-    <!-- Kiri: Toggle & Logo -->
     <div class="nav-left">
       <button id="navToggle" class="toggle-button">☰</button>
       <span class="logo">🌸 <strong>Toko Bunga Indah</strong> 🌸</span>
       <input type="text" class="search-bar" placeholder="Cari bunga...">
     </div>
 
-    <!-- Kanan: Profile & Dark Mode -->
     <div class="nav-right">
       <button id="themeToggle" class="toggle-button">
         <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#333"></svg>
@@ -33,11 +30,15 @@
     </div>
   </nav>
 
-  <!-- Side Menu -->
   <div class="nav-links" id="navLinks">
+    {# Di dalam bagian <div class="nav-links" id="navLinks"> #}
     {% if session.get('role') == 'pembeli' %}
       <a href="{{ url_for('home_buyer') }}">Home</a>
-      <a href="{{ url_for('home_buyer') }}">Dashboard Pembeli</a>
+      <a href="{{ url_for('home_buyer') }}">Lihat Produk</a>
+      <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+      **<a href="{{ url_for('cart') }}">Keranjang
+        {% if session.get('cart') %}({{ session['cart']|length }}){% endif %}
+      </a>**
       <a href="{{ url_for('profile') }}">Profil</a>
       <a href="{{ url_for('logout') }}">Logout</a>
     {% elif session.get('role') == 'penjual' %}
@@ -53,12 +54,10 @@
     {% endif %}
   </div>
 
-  <!-- Main Content -->
   <main class="container" style="flex: 1">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-content">
       <strong>Toko Bunga Indah</strong> — Teman setia momenmu 💐

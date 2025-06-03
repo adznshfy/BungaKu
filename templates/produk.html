@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}Produk{% endblock %}
+
+{% block content %}
+<h2>Daftar Produk</h2>
+{% if produk %}
+    <ul>
+    {% for item in produk %}
+        <li>
+            <strong>{{ item.name }}</strong><br>
+            {{ item.description }}<br>
+            Harga: {{ item.price }}<br>
+            Stok: {{ item.stock }}<br>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Belum ada produk tersedia.</p>
+{% endif %}
+</ul>
+{% endblock %}
