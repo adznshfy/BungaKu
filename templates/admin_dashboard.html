@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+  <div class="navbar">
+    <div class="nav-left">
+      <button class="toggle-button" onclick="toggleSidebar()">☰</button>
+      <span class="brand">Toko Bunga Indah</span>
+    </div>
+    <div class="nav-right">
+      <img src="{% if profile.profile_picture %}{{ url_for('static', filename='images/' + profile.profile_picture) }}{% else %}{{ url_for('static', filename='images/default_profile.jpg') }}{% endif %}" alt="Profile" class="profile-icon">
+    </div>
+  </div>
+
+  <div class="nav-links" id="sidebar">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard Admin</a>
+    <a href="{{ url_for('admin_users') }}">Kelola Pengguna</a>
+    <a href="{{ url_for('admin_products') }}">Kelola Produk</a>
+    <a href="{{ url_for('admin_orders') }}">Kelola Pesanan</a>
+    <a href="{{ url_for('profile') }}">Profil Saya</a>
+    <a href="{{ url_for('change_password') }}">Ganti Kata Sandi</a>
+    <a href="{{ url_for('logout') }}">Keluar</a>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-card">
+      <h2>Dashboard Admin</h2>
+      <div class="stats-grid">
+        <div class="stats-card">
+          <h3>Total Pengguna</h3>
+          <p>{{ total_users }}</p>
+        </div>
+        <div class="stats-card">
+          <h3>Total Produk</h3>
+          <p>{{ total_products }}</p>
+        </div>
+        <div class="stats-card">
+          <h3>Total Pesanan</h3>
+          <p>{{ total_orders }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

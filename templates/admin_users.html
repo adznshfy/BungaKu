@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block title %}Admin Users{% endblock %}
+
+{% block content %}
+  <div class="navbar">
+    <div class="nav-left">
+      <button class="toggle-button" onclick="toggleSidebar()">☰</button>
+      <span class="brand">Toko Bunga Indah</span>
+    </div>
+    <div class="nav-right">
+      <img src="{% if profile.profile_picture %}{{ url_for('static', filename='images/' + profile.profile_picture) }}{% else %}{{ url_for('static', filename='images/default_profile.jpg') }}{% endif %}" alt="Profile" class="profile-icon">
+    </div>
+  </div>
+
+  <div class="nav-links" id="sidebar">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard Admin</a>
+    <a href="{{ url_for('admin_users') }}">Kelola Pengguna</a>
+    <a href="{{ url_for('admin_products') }}">Kelola Produk</a>
+    <a href="{{ url_for('admin_orders') }}">Kelola Pesanan</a>
+    <a href="{{ url_for('profile') }}">Profil Saya</a>
+    <a href="{{ url_for('change_password') }}">Ganti Kata Sandi</a>
+    <a href="{{ url_for('logout') }}">Keluar</a>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-card">
+      <h2>Kelola Pengguna</h2>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <p style="color: red;">{{ messages[0] }}</p>
+      {% endif %}
+      {% endwith %}
+      {% if user %}
+      <div class="form-container">
+        <h3>Edit Pengguna</h3>
+        <form action="{{ url_for('admin_edit_user', id=user.id) }}" method="POST">
+          <input type="text" name="name" placeholder="Nama" value="{{ user.name }}" required>
+          <input type="text" name="username" placeholder="Username" value="{{ user.username }}" required>
+          <input type="email" name="email" placeholder="Email" value="{{ user.email }}" required>
+          <input type="text" name="phone_number" placeholder="Nomor HP" value="{{ user.phone_number }}" required>
+          <select name="role" required>
+            <option value="buyer" {% if user.role == 'buyer' %}selected{% endif %}>Pembeli</option>
+            <option value="seller" {% if user.role == 'seller' %}selected{% endif %}>Penjual</option>
+            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+          </select>
+          <button type="submit">Simpan</button>
+        </form>
+      </div>
+      {% endif %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Nomor HP</th>
+            <th>Role</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone_number }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              <a href="{{ url_for('admin_edit_user', id=user.id) }}" class="btn-primary">Edit</a>
+              <a href="{{ url_for('admin_delete_user', id=user.id) }}" class="btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?')">Hapus</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

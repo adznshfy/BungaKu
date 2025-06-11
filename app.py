@@ -7,6 +7,8 @@ import bcrypt
 from dotenv import load_dotenv
 import email_verification
 from werkzeug.utils import secure_filename
+from admin import admin_bp
+
 
 load_dotenv()
 
@@ -28,6 +30,7 @@ app.config['MAIL_DEBUG'] = True
 email_verification.mail.init_app(app)
 
 email_verification.mysql = mysql
+app.register_blueprint(admin_bp)
 
 app.secret_key = "017#!NaswaJia)!!"
 app.register_blueprint(email_verification.email_bp)
