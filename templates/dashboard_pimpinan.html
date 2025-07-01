@@ -1,0 +1,180 @@
+{% extends "layout.html" %} {% block title %}Dashboard Pimpinan{% endblock %} {%
+block content %}
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Dashboard Pimpinan</h2>
+    <div>
+      <a href="{{ url_for('download_excel') }}" class="btn btn-success"
+        ><i class="fas fa-file-excel me-1"></i> Unduh Excel</a
+      >
+      <a href="{{ url_for('download_pdf') }}" class="btn btn-danger"
+        ><i class="fas fa-file-pdf me-1"></i> Unduh PDF</a
+      >
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <div class="card shadow-sm text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title text-muted">Total Pendapatan</h5>
+          <p class="card-text fs-4 fw-bold">
+            Rp {{ "{:,.0f}".format(kpi.total_pendapatan) }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="card shadow-sm text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title text-muted">Total Transaksi</h5>
+          <p class="card-text fs-4 fw-bold">
+            {{ "{:,.0f}".format(kpi.total_transaksi) }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="card shadow-sm text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title text-muted">Total Pengguna</h5>
+          <p class="card-text fs-4 fw-bold">
+            {{ "{:,.0f}".format(kpi.total_pengguna) }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="card shadow-sm text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title text-muted">Total Produk</h5>
+          <p class="card-text fs-4 fw-bold">
+            {{ "{:,.0f}".format(kpi.total_produk) }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header"><h5>Pendapatan 7 Hari Terakhir</h5></div>
+    <div class="card-body"><canvas id="salesChart"></canvas></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><h5>Top 5 Produk Terlaris</h5></div>
+        <div class="card-body">
+          <div class="chart-container mb-3">
+            <canvas id="topProdukChart" style="max-height: 250px"></canvas>
+          </div>
+          <hr />
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Nama Produk</th>
+                <th>Total Terjual</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for produk in top_produk %}
+              <tr>
+                <td>{{ produk.name }}</td>
+                <td>{{ produk.total_terjual }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">
+                  Belum ada data.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><h5>Top 5 Toko Rating Tertinggi</h5></div>
+        <div class="card-body">
+          <div class="chart-container mb-3">
+            <canvas id="topTokoChart" style="max-height: 250px"></canvas>
+          </div>
+          <hr />
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Nama Toko</th>
+                <th>Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for toko in top_toko %}
+              <tr>
+                <td>{{ toko.nama_toko }}</td>
+                <td>
+                  {{ "%.1f"|format(toko.rata_rating) }} ★ ({{ toko.jumlah_ulasan
+                  }} ulasan)
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">
+                  Belum ada data.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chart-container {
+    position: relative;
+    height: 250px; /* Atur tinggi default kanvas */
+    width: 100%;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const lineLabels = {{ chart_labels | tojson }};
+      const lineData = {{ chart_data | tojson }};
+      const pieLabels = {{ top_produk|map(attribute='name')|list|tojson }};
+      const pieData = {{ top_produk|map(attribute='total_terjual')|list|tojson }};
+      const barLabels = {{ top_toko|map(attribute='nama_toko')|list|tojson }};
+      const barData = {{ top_toko|map(attribute='rata_rating')|list|tojson }};
+
+      const salesChartCanvas = document.getElementById('salesChart');
+      if (salesChartCanvas && lineLabels.length > 0) {
+          new Chart(salesChartCanvas.getContext('2d'), {
+              type: 'line', data: { labels: lineLabels, datasets: [{ label: 'Pendapatan (Rp)', data: lineData, backgroundColor: 'rgba(0, 123, 255, 0.1)', borderColor: 'rgba(0, 123, 255, 1)', borderWidth: 2, tension: 0.3, fill: true }] },
+              options: { scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return 'Rp ' + value.toLocaleString('id-ID'); } } } } }
+          });
+      }
+
+      const topProdukCanvas = document.getElementById('topProdukChart');
+      if (topProdukCanvas && pieLabels.length > 0) {
+          new Chart(topProdukCanvas.getContext('2d'), {
+              type: 'pie', data: { labels: pieLabels, datasets: [{ label: 'Total Terjual', data: pieData, backgroundColor: ['#0d6efd', '#6c757d', '#198754', '#dc3545', '#ffc107'], hoverOffset: 4 }] },
+              options: { responsive: true, maintainAspectRatio: false }
+          });
+      }
+
+      const topTokoCanvas = document.getElementById('topTokoChart');
+      if (topTokoCanvas && barLabels.length > 0) {
+          new Chart(topTokoCanvas.getContext('2d'), {
+              type: 'bar', data: { labels: barLabels, datasets: [{ label: 'Rata-rata Rating', data: barData, backgroundColor: 'rgba(25, 135, 84, 0.7)', borderColor: 'rgba(25, 135, 84, 1)', borderWidth: 1 }] },
+              options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, max: 5 } } }
+          });
+      }
+  });
+</script>
+{% endblock %}

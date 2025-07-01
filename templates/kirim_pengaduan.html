@@ -20,16 +20,17 @@ block content %}
         {% endif %}
         <div class="mb-3">
           <label for="subjek" class="form-label fw-bold"
-            >Subjek Pengaduan</label
+            >Pilih Subjek Pengaduan</label
           >
-          <input
-            type="text"
-            class="form-control"
-            id="subjek"
-            name="subjek"
-            placeholder="Contoh: Pesanan tidak sesuai"
-            required
-          />
+          <select class="form-select" id="subjek" name="subjek" required>
+            <option value="" disabled selected>
+              -- Pilih Kategori Masalah --
+            </option>
+            <option value="Barang tidak sesuai">Barang tidak sesuai</option>
+            <option value="Pengiriman lama">Pengiriman lama</option>
+            <option value="Barang rusak">Barang rusak</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
         </div>
         <div class="mb-4">
           <label for="isi_pengaduan" class="form-label fw-bold"

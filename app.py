@@ -8,6 +8,10 @@ import bcrypt
 from dotenv import load_dotenv
 import email_verification
 from werkzeug.utils import secure_filename
+from datetime import datetime
+import pandas as pd
+from flask import Response
+import io
 from admin import admin_bp
 
 load_dotenv()
@@ -128,7 +132,7 @@ def login():
             elif id_level == 2: # Pengelola
                 return redirect(url_for('dashboard_pengelola'))
             elif id_level == 5: # Pemimpin
-                return redirect(url_for('management_bp.dashboard_pemimpin'))
+                return redirect(url_for('dashboard_pimpinan'))
             elif id_level == 3: # Penjual
                 return redirect(url_for('dashboard_penjual'))
             else: # Pembeli (level 4) atau default
@@ -350,7 +354,7 @@ def home_buyer():
         id_level = session.get('id_level')
         if id_level == 1: return redirect(url_for('dashboard_admin'))
         if id_level == 2: return redirect(url_for('dashboard_pengelola'))
-        if id_level == 5: return redirect(url_for('dashboard_pemimpin'))
+        if id_level == 5: return redirect(url_for('dashboard_pimpinan'))
 
         # Jika tidak ada sesi, arahkan ke login
         return redirect(url_for('login'))
@@ -1666,6 +1670,103 @@ def kirim_pengaduan():
         return redirect(url_for('home_buyer'))
 
     return render_template('kirim_pengaduan.html', id_transaksi=id_transaksi)
+
+# Ganti/tambahkan fungsi dashboard pimpinan Anda dengan yang ini
+@app.route('/dashboard-pimpinan')
+def dashboard_pimpinan():
+    if 'id_user' not in session or session.get('id_level') != 5:
+        flash("Halaman ini hanya untuk Pimpinan.", "error")
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # 1. Ambil KPI Utama (Key Performance Indicators)
+    cur.execute("SELECT SUM(total_harga) as total_pendapatan FROM transaksi WHERE status = 'selesai'")
+    total_pendapatan = cur.fetchone()['total_pendapatan'] or 0
+
+    cur.execute("SELECT COUNT(id_transaksi) as total_transaksi FROM transaksi")
+    total_transaksi = cur.fetchone()['total_transaksi'] or 0
+
+    cur.execute("SELECT COUNT(id_user) as total_pengguna FROM users WHERE id_level IN (3,4)")
+    total_pengguna = cur.fetchone()['total_pengguna'] or 0
+
+    cur.execute("SELECT COUNT(id) as total_produk FROM products")
+    total_produk = cur.fetchone()['total_produk'] or 0
+    
+    kpi_data = {
+        'total_pendapatan': total_pendapatan,
+        'total_transaksi': total_transaksi,
+        'total_pengguna': total_pengguna,
+        'total_produk': total_produk
+    }
+
+    # 2. Ambil data untuk Chart Penjualan 7 Hari Terakhir
+    cur.execute("""
+        SELECT DATE(tanggal_pesanan) as tanggal, SUM(total_harga) as pendapatan_harian
+        FROM transaksi WHERE status = 'selesai' AND tanggal_pesanan >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY DATE(tanggal_pesanan) ORDER BY tanggal ASC;
+    """)
+    penjualan_harian = cur.fetchall()
+    chart_labels = [item['tanggal'].strftime('%d %b') for item in penjualan_harian]
+    chart_data = [float(item['pendapatan_harian']) for item in penjualan_harian]
+
+    # 3. Ambil data Top 5 Produk Terlaris
+    cur.execute("""
+        SELECT p.name, SUM(ti.kuantitas) as total_terjual FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
+        WHERE t.status = 'selesai' GROUP BY p.name ORDER BY total_terjual DESC LIMIT 5;
+    """)
+    top_produk = cur.fetchall()
+
+    # 4. Ambil data Top 5 Toko Rating Tertinggi
+    cur.execute("""
+        SELECT t.nama_toko, AVG(pr.rating) as rata_rating, COUNT(pr.id) as jumlah_ulasan
+        FROM product_ratings pr JOIN products p ON pr.id_produk = p.id
+        JOIN toko t ON p.id_user = t.id_user GROUP BY t.nama_toko
+        ORDER BY rata_rating DESC, jumlah_ulasan DESC LIMIT 5;
+    """)
+    top_toko = cur.fetchall()
+    cur.close()
+
+    return render_template('dashboard_pimpinan.html', 
+                           kpi=kpi_data,
+                           chart_labels=chart_labels,
+                           chart_data=chart_data,
+                           top_produk=top_produk,
+                           top_toko=top_toko)
+
+# --- Tambahkan 2 fungsi untuk download laporan ---
+
+@app.route('/download-excel')
+def download_excel():
+    if 'id_user' not in session or session.get('id_level') != 5:
+        return redirect(url_for('login'))
+        
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    # Ambil data transaksi yang sudah selesai untuk dilaporkan
+    cur.execute("""
+        SELECT id_transaksi, id_user, total_harga, status, metode_pengiriman, metode_pembayaran, tanggal_pesanan
+        FROM transaksi WHERE status = 'selesai'
+    """)
+    data = cur.fetchall()
+    cur.close()
+
+    # Buat DataFrame dan konversi ke file Excel dalam memori
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name='Laporan Penjualan', index=False)
+    writer.close()
+    output.seek(0)
+    
+    return Response(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=laporan_penjualan.xlsx"})
+
+
+@app.route('/download-pdf')
+def download_pdf():
+    flash("Fitur unduh PDF sedang dalam pengembangan.", "info")
+    return redirect(url_for('dashboard_pimpinan'))
 
 if __name__ == '__main__':
     app.run(debug=True)

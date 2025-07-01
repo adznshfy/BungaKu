@@ -54,7 +54,7 @@
         {% elif session.get('id_level') == 2 %}
             <a href="{{ url_for('dashboard_pengelola') }}">Dashboard Pengelola</a>
         {% elif session.get('id_level') == 5 %}
-            <a href="{{ url_for('dashboard_pemimpin') }}">Dashboard Pemimpin</a>
+            <a href="{{ url_for('dashboard_pimpinan') }}">Dashboard Pemimpin</a>
         {% endif %}
         <a href="{{ url_for('logout') }}">Keluar</a>
     {% endif %}
