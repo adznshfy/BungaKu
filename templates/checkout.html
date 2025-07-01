@@ -1,61 +1,478 @@
-{% extends "layout.html" %}
-{% block title %}Checkout{% endblock %}
-
-{% block content %}
-<h2>Ringkasan Pesanan</h2>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
+{% extends "layout.html" %} {% block title %}Checkout{% endblock %} {% block
+content %}
+<div class="container my-4">
+  <h2>Checkout</h2>
+  <form
+    action="{{ url_for('confirm_purchase') }}"
+    method="POST"
+    id="checkout-form"
+  >
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card mb-3">
+          <div
+            class="card-header fw-bold d-flex justify-content-between align-items-center"
+          >
+            <span>Alamat Pengiriman</span>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              id="open-address-modal-btn"
+            >
+              Ganti Alamat
+            </button>
+          </div>
+          <div class="card-body" id="selected-address">
+            {% set utama = addresses|selectattr('is_utama')|first %}
+            <strong
+              >{{ utama.nama_penerima if utama else session.nama }}</strong
+            >
+            <p class="mb-1">
+              {{ utama.no_hp if utama else 'No HP belum diatur' }}
+            </p>
+            <p class="mb-0">
+              {{ utama.alamat_lengkap if utama else 'Alamat belum diatur' }}
+            </p>
+          </div>
+        </div>
+        <div class="card mb-3">
+          <div class="card-header fw-bold">Metode Pengiriman</div>
+          <div class="card-body">
+            {% for option in shipping_options %}
+            <div class="form-check">
+              {% set cost = 15000 if 'JNE' in option else 16000 if 'J&T' in
+              option else 18000 if 'SiCepat' in option else 20000 %}
+              <input
+                class="form-check-input checkout-option"
+                type="radio"
+                name="shipping"
+                id="ship-{{loop.index}}"
+                value="{{ option }}"
+                data-cost="{{ cost }}"
+                required
+              />
+              <label
+                class="form-check-label d-flex justify-content-between"
+                for="ship-{{loop.index}}"
+              >
+                <span>{{ option }}</span>
+                <span>Rp {{ "{:,.0f}".format(cost) }}</span>
+              </label>
+            </div>
+            {% else %}
+            <p class="text-muted">Toko ini belum mengatur metode pengiriman.</p>
             {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
-
-{% if cart_items %}
-    <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Produk</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Harga Satuan</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Kuantitas</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-            <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">{{ item.name }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.price|int }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ item.quantity }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.total_item_price|int }}</td>
-            </tr>
+          </div>
+        </div>
+        <div class="card mb-3">
+          <div class="card-header fw-bold">Metode Pembayaran</div>
+          <div class="card-body">
+            {% for option in payment_options %}
+            <div class="form-check">
+              <input
+                class="form-check-input checkout-option"
+                type="radio"
+                name="payment"
+                id="pay-{{loop.index}}"
+                value="{{ option }}"
+                required
+              />
+              <label class="form-check-label" for="pay-{{loop.index}}"
+                >{{ option }}</label
+              >
+            </div>
+            {% else %}
+            <p class="text-muted">Toko ini belum mengatur metode pembayaran.</p>
             {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Total yang harus dibayar:</strong></td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Rp{{ total_cart_price|int }}</strong></td>
-            </tr>
-        </tfoot>
-    </table>
+          </div>
+        </div>
+      </div>
 
-    <h3 style="margin-top: 30px;">Detail Pengiriman (contoh)</h3>
-    <p>Nama Penerima: {{ session['nama'] }}</p>
-    <p>Alamat: (Ini akan diambil dari profil pengguna, perlu ditambahkan query ke DB)</p>
-    <p>Nomor Telepon: (Ini akan diambil dari profil pengguna)</p>
-
-    <div style="text-align: center; margin-top: 30px;">
-        <form action="{{ url_for('confirm_purchase') }}" method="POST">
-            <button type="submit" style="background-color: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em;">Selesaikan Pembelian</button>
-        </form>
-        <p style="margin-top: 10px;"><a href="{{ url_for('cart') }}">Kembali ke Keranjang</a></p>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header fw-bold">Ringkasan Belanja</div>
+          <div class="card-body">
+            <div class="d-grid mb-3">
+              <button
+                class="btn btn-outline-success"
+                type="button"
+                id="open-voucher-modal-btn"
+              >
+                Pilih atau Gunakan Voucher
+              </button>
+            </div>
+            <input
+              type="hidden"
+              id="voucher-code"
+              name="kode_voucher_terpilih"
+            />
+            <button type="button" id="apply-voucher-btn" style="display: none">
+              Terapkan
+            </button>
+            <div id="voucher-info" class="text-success small mb-2"></div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Subtotal Produk</span
+                ><span id="summary-subtotal"
+                  >Rp {{ "{:,.0f}".format(subtotal) }}</span
+                >
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Biaya Pengiriman</span
+                ><span id="summary-shipping">Rp 0</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Biaya Layanan</span><span>Rp 1,000</span>
+              </li>
+              <li
+                id="summary-discount-row"
+                class="list-group-item d-flex justify-content-between text-success hidden"
+              >
+                <span>Diskon</span><span id="summary-discount">- Rp 0</span>
+              </li>
+              <li
+                class="list-group-item d-flex justify-content-between fw-bold fs-5"
+              >
+                <span>Total Pembayaran</span
+                ><span id="summary-total">Rp 0</span>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer d-grid">
+            <button
+              type="submit"
+              id="confirm-purchase-btn"
+              class="btn btn-primary"
+              disabled
+            >
+              Selesaikan Pembelian & Bayar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+  </form>
+</div>
 
-{% else %}
-    <p>Keranjang belanja Anda kosong.</p>
-    <p><a href="{{ url_for('home_buyer') }}">Belanja Sekarang!</a></p>
-{% endif %}
+<div id="address-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4>Pilih Alamat Pengiriman</h4>
+      <span class="close-button">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form action="" method="POST" id="address-select-form">
+        {% if addresses %}{% for addr in addresses %}
+        <div class="address-item">
+          <input
+            type="radio"
+            name="selected_address"
+            value="{{ addr.id }}"
+            id="addr-{{ addr.id }}"
+            {%
+            if
+            addr.is_utama
+            %}checked{%
+            endif
+            %}
+            class="address-radio"
+          />
+          <label for="addr-{{ addr.id }}" class="flex-grow-1">
+            <strong>{{ addr.nama_penerima }}</strong> {% if addr.is_utama
+            %}<span class="badge bg-success">Utama</span>{% endif %}<br />{{
+            addr.no_hp }}<br />{{ addr.alamat_lengkap }}
+          </label>
+          {% if not addr.is_utama %}<button
+            type="submit"
+            formaction="{{ url_for('set_primary_address', address_id=addr.id) }}"
+            class="btn btn-sm btn-outline-secondary"
+          >
+            Jadikan Utama</button
+          >{% endif %}
+        </div>
+        {% endfor %}{% else %}
+        <p>Anda belum memiliki alamat tersimpan.</p>
+        {% endif %}
+      </form>
+      <hr />
+      <h5>Tambah Alamat Baru</h5>
+      <form action="{{ url_for('add_address') }}" method="POST">
+        <div class="form-group mb-2">
+          <label>Nama Penerima</label
+          ><input
+            type="text"
+            name="nama_penerima"
+            class="form-control"
+            required
+          />
+        </div>
+        <div class="form-group mb-2">
+          <label>Nomor HP</label
+          ><input type="text" name="no_hp" class="form-control" required />
+        </div>
+        <div class="form-group mb-2">
+          <label>Alamat Lengkap</label
+          ><textarea
+            name="alamat_lengkap"
+            class="form-control"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            name="is_utama"
+            id="is_utama_checkbox"
+          /><label class="form-check-label" for="is_utama_checkbox"
+            >Jadikan alamat utama</label
+          >
+        </div>
+        <button type="submit" class="btn btn-primary">
+          Simpan Alamat Baru
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="voucher-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4>Pilih Voucher</h4>
+      <span class="close-button">&times;</span>
+    </div>
+    <div class="modal-body">
+      {% for v in vouchers %}
+      <div
+        class="address-item voucher-item"
+        data-code="{{ v.kode_voucher }}"
+        style="cursor: pointer"
+      >
+        <div>
+          <strong>{{ v.jenis_diskon | replace('_', ' ') | title }}</strong
+          ><br /><small>{{ v.keterangan }}</small>
+        </div>
+        <button class="btn btn-sm btn-primary">Gunakan</button>
+      </div>
+      {% else %}
+      <p>Tidak ada voucher yang tersedia saat ini.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .hidden {
+    display: none !important;
+  }
+  .modal-overlay {
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  .close-button {
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .address-item {
+    padding: 0.75rem;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // === DEKLARASI SEMUA ELEMEN ===
+      const subtotal = {{ subtotal or 0 }};
+      const serviceFee = 1000;
+      let shippingCost = 0;
+      let appliedVoucher = null;
+
+      // Elemen Ringkasan Belanja
+      const summaryShippingEl = document.getElementById('summary-shipping');
+      const summaryDiscountRowEl = document.getElementById('summary-discount-row');
+      const summaryDiscountEl = document.getElementById('summary-discount');
+      const summaryTotalEl = document.getElementById('summary-total');
+
+      // Elemen Opsi & Tombol
+      // [PERBAIKAN 1]: Menggunakan selector yang benar untuk radio button pengiriman
+      const shippingOptions = document.querySelectorAll('input[name="shipping"]');
+      const voucherInput = document.getElementById('voucher-code');
+      const applyVoucherBtn = document.getElementById('apply-voucher-btn');
+      const voucherInfoEl = document.getElementById('voucher-info');
+      const confirmPurchaseBtn = document.getElementById('confirm-purchase-btn');
+      const checkoutOptions = document.querySelectorAll('.checkout-option');
+
+      // [PERBAIKAN 2]: Membuat deklarasi elemen modal lebih aman dengan pengecekan
+      const addressModal = document.getElementById('address-modal');
+      const openAddressModalBtn = document.getElementById('open-address-modal-btn');
+      const closeAddressModalBtn = addressModal ? addressModal.querySelector('.close-button') : null;
+
+      const voucherModal = document.getElementById('voucher-modal');
+      const openVoucherModalBtn = document.getElementById('open-voucher-modal-btn');
+      const closeVoucherModalBtn = voucherModal ? voucherModal.querySelector('.close-button') : null;
+
+
+      // === FUNGSI UTAMA UNTUK UPDATE RINGKASAN ===
+      // GANTI FUNGSI INI DI DALAM checkout.html
+
+  function updateSummary() {
+      let discountAmount = 0;
+
+      // [PERBAIKAN] Logika if/else diperbaiki untuk menangani semua jenis voucher
+      if (appliedVoucher) {
+          if (appliedVoucher.jenis === 'gratis_ongkir') {
+              // Logika gratis ongkir sudah benar
+              discountAmount = Math.min(shippingCost, appliedVoucher.nilai);
+
+          } else if (appliedVoucher.jenis === 'persen') {
+              // Logika BARU untuk diskon persentase
+              // Diskon dihitung dari subtotal produk
+              discountAmount = (subtotal * appliedVoucher.nilai) / 100;
+
+          } else if (appliedVoucher.jenis === 'nominal') {
+              // Logika BARU untuk diskon nominal (potongan harga langsung)
+              discountAmount = appliedVoucher.nilai;
+          }
+
+          summaryDiscountRowEl.classList.remove('hidden');
+          summaryDiscountEl.textContent = `- Rp ${Math.round(discountAmount).toLocaleString('id-ID')}`;
+      } else {
+          summaryDiscountRowEl.classList.add('hidden');
+      }
+
+      // Kalkulasi total akhir (tidak berubah)
+      const grandTotal = subtotal + shippingCost + serviceFee - discountAmount;
+      summaryShippingEl.textContent = `Rp ${shippingCost.toLocaleString('id-ID')}`;
+      summaryTotalEl.textContent = `Rp ${Math.round(grandTotal).toLocaleString('id-ID')}`;
+  }
+
+      // === FUNGSI UNTUK VALIDASI TOMBOL BAYAR ===
+      function checkFormCompleteness() {
+          const shippingSelected = document.querySelector('input[name="shipping"]:checked');
+          const paymentSelected = document.querySelector('input[name="payment"]:checked');
+          if (confirmPurchaseBtn) {
+              confirmPurchaseBtn.disabled = !(shippingSelected && paymentSelected);
+          }
+      }
+
+      // === EVENT LISTENERS ===
+
+      // 1. Untuk Opsi Pengiriman
+      shippingOptions.forEach(radio => {
+          radio.addEventListener('change', function() {
+              if (this.checked) {
+                  shippingCost = parseFloat(this.dataset.cost);
+                  updateSummary();
+              }
+          });
+      });
+
+      // 2. Untuk validasi tombol bayar setiap kali pilihan berubah
+      checkoutOptions.forEach(option => {
+          option.addEventListener('change', checkFormCompleteness);
+      });
+
+      // 3. Untuk menerapkan voucher
+      if (applyVoucherBtn) {
+          applyVoucherBtn.addEventListener('click', function() {
+              const code = voucherInput.value.trim();
+              if (!code) { return; }
+              fetch("{{ url_for('apply_voucher') }}", {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: `kode_voucher=${code}`
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      appliedVoucher = data;
+                      voucherInfoEl.textContent = data.keterangan;
+                      voucherInfoEl.className = 'text-success small mb-2';
+                  } else {
+                      appliedVoucher = null;
+                      voucherInfoEl.textContent = data.message;
+                      voucherInfoEl.className = 'text-danger small mb-2';
+                  }
+                  updateSummary();
+              });
+          });
+      }
+
+      // 4. Untuk Modal Alamat (Kini dengan pengecekan)
+      if (openAddressModalBtn && addressModal) {
+          openAddressModalBtn.addEventListener('click', () => { addressModal.classList.remove('hidden'); });
+      }
+      if (closeAddressModalBtn && addressModal) {
+          closeAddressModalBtn.addEventListener('click', () => { addressModal.classList.add('hidden'); });
+      }
+      document.querySelectorAll('.address-radio').forEach(radio => {
+          radio.addEventListener('change', function() {
+              const selectedLabel = this.nextElementSibling.cloneNode(true);
+              const buttonToRemove = selectedLabel.querySelector('button');
+              if (buttonToRemove) { buttonToRemove.remove(); }
+              document.getElementById('selected-address').innerHTML = selectedLabel.innerHTML;
+              if(addressModal) addressModal.classList.add('hidden');
+          });
+      });
+
+      // 5. Untuk Modal Voucher (Kini dengan pengecekan)
+      if (openVoucherModalBtn && voucherModal) {
+          openVoucherModalBtn.addEventListener('click', () => { voucherModal.classList.remove('hidden'); });
+      }
+      if (closeVoucherModalBtn && voucherModal) {
+          closeVoucherModalBtn.addEventListener('click', () => { voucherModal.classList.add('hidden'); });
+      }
+      document.querySelectorAll('.voucher-item').forEach(item => {
+          item.addEventListener('click', function() {
+              voucherInput.value = this.dataset.code;
+              if(voucherModal) voucherModal.classList.add('hidden');
+              if(applyVoucherBtn) applyVoucherBtn.click();
+          });
+      });
+
+      // 6. Untuk menutup modal jika klik di luar
+      window.addEventListener('click', function(event) {
+          if (event.target == addressModal) { addressModal.classList.add('hidden'); }
+          if (event.target == voucherModal) { voucherModal.classList.add('hidden'); }
+      });
+
+      // Panggil fungsi di awal untuk inisialisasi
+      updateSummary();
+      checkFormCompleteness();
+  });
+</script>
 {% endblock %}

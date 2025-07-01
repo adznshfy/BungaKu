@@ -2,17 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome</title>
+    <title>Selamat Datang di Toko Bunga Indah</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<body>
 
-<body class="welcome-page">
-    <section class="landing">
-        <div class="card">         
-            <h1>💐 Toko Bunga Indah 💐</h1>
-            <p>Carilah bunga favoritmu di sini!</p>
-            <a class="btn-primary" href="{{ url_for('choose_role') }}">Mulai</a>
-        </div>
-    </section>
+    <div class="welcome-container">
+        <div class="card">
+        <h1>🌸 BungaKu 🌸</h1>
+        
+        {# Cek apakah pengguna sudah login atau belum #}
+        {% if 'id_user' in session %}
+            <p>Halo, {{ session.nama }}! Selamat datang kembali.</p>
+            <a href="{{ url_for('home_buyer') }}" class="btn-welcome btn-primary">Lanjutkan Belanja</a>
+        {% else %}
+            <p>Temukan bunga yang sempurna untuk setiap momen spesial Anda.</p>
+            <a href="{{ url_for('login') }}" class="btn-welcome btn-primary">Login</a>
+            <a href="{{ url_for('register') }}" class="btn-welcome btn-secondary">Register</a>
+        {% endif %}
+    </div>
+    </div>
+
 </body>
 </html>

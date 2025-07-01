@@ -1,0 +1,9 @@
+{% for order in orders %}
+    {# Di sini kita menyertakan kartu pesanan yang sudah kita buat #}
+    {% include 'order_card.html' %}
+{% else %}
+    {# Pesan ini akan muncul jika tidak ada pesanan dengan status terkait #}
+    <div class="p-3 text-center text-muted">
+        <p>Tidak ada pesanan dalam kategori ini.</p>
+    </div>
+{% endfor %}

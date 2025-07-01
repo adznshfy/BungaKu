@@ -2,23 +2,117 @@
 {% block title %}Edit Produk{% endblock %}
 
 {% block content %}
-<h2>Edit Produk</h2>
-<form method="POST" enctype="multipart/form-data">
-    <label>Nama:</label><br>
-    <input type="text" name="name" value="{{ produk.name }}" required><br>
+<div class="container" style="max-width: 800px; margin: auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Edit Produk: {{ produk.name }}</h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('edit_product', product_id=produk.id) }}" method="POST" enctype="multipart/form-data">
+                
+                <div class="form-group mb-3">
+                    <label for="name" class="font-weight-bold">Nama Produk</label>
+                    <input type="text" name="name" id="name" class="form-control" value="{{ produk.name }}" required>
+                </div>
 
-    <label>Deskripsi:</label><br>
-    <textarea name="description" required>{{ produk.description }}</textarea><br>
+                <div class="form-group mb-3">
+                    <label for="description" class="font-weight-bold">Deskripsi Produk</label>
+                    <textarea name="description" id="description" class="form-control" rows="5" required>{{ produk.description }}</textarea>
+                </div>
+                <hr>
 
-    <label>Harga:</label><br>
-    <input type="number" name="price" value="{{ produk.price }}" required><br>
+                <h4 class="mb-3">Foto Produk</h4>
+                <div class="mb-3">
+                    <label class="font-weight-bold">Foto Saat Ini</label>
+                    <div class="d-flex flex-wrap">
+                    {% for img in images %}
+                        <div class="text-center m-2">
+                            <img src="{{ url_for('static', filename='uploads/' + img.nama_file_gambar) }}" class="img-thumbnail" style="width:100px; height:100px; object-fit:cover;">
+                            <br>
+                            <input type="checkbox" name="delete_images" value="{{ img.id }}" id="del_img_{{ img.id }}">
+                            <label for="del_img_{{ img.id }}">Hapus</label>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="images" class="font-weight-bold">Tambah Foto Baru (Opsional)</label>
+                    <input type="file" name="images" id="images" class="form-control-file" multiple>
+                </div>
+                <hr>
 
-    <label>Stok:</label><br>
-    <input type="number" name="stock" value="{{ produk.stock }}" required><br>
+                <h4 class="mb-3">Varian Produk</h4>
+                <p>Strategi Edit Varian: Semua varian lama akan dihapus dan diganti dengan yang Anda isi di bawah ini.</p>
+                {% for i in range(1, 4) %}
+                <div class="card card-body mb-3">
+                    <h5>Varian {{ i }}</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label>Nama Varian</label>
+                            <input type="text" name="variation_name_{{ i }}" class="form-control" value="{{ variations[i-1].nama_varian if variations[i-1] else '' }}">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Harga (Rp)</label>
+                            <input type="number" name="price_{{ i }}" class="form-control" value="{{ variations[i-1].harga if variations[i-1] else '' }}">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Stok</label>
+                            <input type="number" name="stock_{{ i }}" class="form-control" value="{{ variations[i-1].stok if variations[i-1] else '' }}">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <small>Pastikan Varian 1 terisi. Untuk menghapus varian, cukup kosongkan barisnya.</small>
 
-    <label>Gambar (jika ingin ganti):</label><br>
-    <input type="file" name="image"><br><br>
+                <button type="submit" class="btn btn-primary mt-3" style="width: 100%;">Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+</div>
 
-    <button type="submit">Update</button>
-</form>
+<div class="card mt-5">
+    <div class="card-header">
+        <h4>Manajemen Voucher untuk Produk Ini</h4>
+    </div>
+    <div class="card-body">
+        <h5>Voucher Aktif</h5>
+        {% if vouchers %}
+            <ul class="list-group">
+            {% for voucher in vouchers %}
+                <li class="list-group-item">{{ voucher.kode_voucher }} - {{ voucher.jenis_diskon|title }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">Belum ada voucher untuk produk ini.</p>
+        {% endif %}
+
+        <hr>
+
+        <h5>Tambah Voucher Baru</h5>
+        <form action="{{ url_for('tambah_voucher', product_id=produk.id) }}" method="POST">
+            <div class="mb-3">
+                <label for="kode_voucher" class="form-label">Kode Voucher</label>
+                <input type="text" name="kode_voucher" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="jenis_diskon" class="form-label">Jenis Voucher</label>
+                <select name="jenis_diskon" class="form-select" required>
+                    <option value="nominal">Diskon Nominal (Rp)</option>
+                    <option value="persen">Diskon Persentase (%)</option>
+                    <option value="gratis_ongkir">Gratis Ongkir</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="nilai_diskon" class="form-label">Nilai Diskon</label>
+                <input type="number" name="nilai_diskon" class="form-control" required placeholder="Contoh: 10000 (untuk Rp) atau 10 (untuk %)">
+                <small class="form-text">Untuk gratis ongkir, isi dengan nominal maksimal ongkir yang ditanggung (misal: 20000).</small>
+            </div>
+            <div class="mb-3">
+                <label for="tgl_kadaluarsa" class="form-label">Tanggal Kadaluarsa (Opsional)</label>
+                <input type="date" name="tgl_kadaluarsa" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Tambah Voucher</button>
+        </form>
+    </div>
+</div>
 {% endblock %}

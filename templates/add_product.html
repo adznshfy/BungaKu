@@ -1,24 +1,92 @@
 {% extends "layout.html" %}
-{% block title %}Tambah Produk{% endblock %}
+{% block title %}Tambah Produk Baru{% endblock %}
 
 {% block content %}
-<h2>Tambah Produk</h2>
-<form method="POST" enctype="multipart/form-data">
-    <label>Nama:</label><br>
-    <input type="text" name="name" required><br>
+<div class="container" style="max-width: 800px; margin: auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Tambah Produk Baru</h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('add_product') }}" method="POST" enctype="multipart/form-data">
+                
+                <div class="form-group mb-3">
+                    <label for="name" class="font-weight-bold">Nama Produk</label>
+                    <input type="text" name="name" id="name" class="form-control" required>
+                </div>
 
-    <label>Deskripsi:</label><br>
-    <textarea name="description" required></textarea><br>
+                <div class="form-group mb-3">
+                    <label for="description" class="font-weight-bold">Deskripsi Produk</label>
+                    <textarea name="description" id="description" class="form-control" rows="5" required></textarea>
+                </div>
 
-    <label>Harga:</label><br>
-    <input type="number" name="price" required><br>
+                <div class="form-group mb-3">
+                    <label for="images" class="font-weight-bold">Foto Produk</label>
+                    <input type="file" name="images" id="images" class="form-control-file" multiple required>
+                    <small class="form-text text-muted">Anda bisa memilih lebih dari satu gambar (Ctrl+Klik).</small>
+                </div>
+                <hr>
 
-    <label>Stok:</label><br>
-    <input type="number" name="stock" required><br>
+                <h4 class="mb-3">Varian Produk</h4>
+                <p>Isi minimal satu varian. Kosongkan baris yang tidak digunakan.</p>
 
-    <label>Gambar (opsional):</label><br>
-    <input type="file" name="image"><br><br>
+                <div class="card card-body mb-3">
+                    <h5>Varian 1</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label>Nama Varian (cth: Merah, Ukuran L)</label>
+                            <input type="text" name="variation_name_1" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Harga (Rp)</label>
+                            <input type="number" name="price_1" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Stok</label>
+                            <input type="number" name="stock_1" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
 
-    <button type="submit">Simpan</button>
-</form>
+                <div class="card card-body mb-3">
+                    <h5>Varian 2</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label>Nama Varian</label>
+                            <input type="text" name="variation_name_2" class="form-control">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Harga (Rp)</label>
+                            <input type="number" name="price_2" class="form-control">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Stok</label>
+                            <input type="number" name="stock_2" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-body mb-3">
+                    <h5>Varian 3</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label>Nama Varian</label>
+                            <input type="text" name="variation_name_3" class="form-control">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Harga (Rp)</label>
+                            <input type="number" name="price_3" class="form-control">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Stok</label>
+                            <input type="number" name="stock_3" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Simpan Produk</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+{% block title %}Beri Ulasan Pesanan{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>Beri Ulasan untuk Pesanan #{{ transaksi_id }}</h2>
+    <p>Bagikan pendapat Anda tentang produk yang Anda terima.</p>
+    <hr>
+
+    {# UBAH BAGIAN INI: Tambahkan enctype untuk upload file #}
+    <form action="{{ url_for('simpan_rating', transaksi_id=transaksi_id) }}" method="POST" enctype="multipart/form-data">
+        {% for item in items %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.product_name }}</h5>
+                
+                {# ... (bagian rating bintang tidak berubah) ... #}
+                <div class="mb-3">
+                    <label class="form-label">Rating Anda:</label>
+                    <div class="rating">
+                        {% for i in range(5, 0, -1) %}
+                        <input type="radio" id="star{{i}}_{{item.id_produk}}" name="rating_{{item.id_produk}}" value="{{i}}" required/>
+                        <label for="star{{i}}_{{item.id_produk}}" title="{{i}} stars"><i class="fas fa-star"></i></label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="komentar_{{item.id_produk}}" class="form-label">Komentar (Opsional):</label>
+                    <textarea class="form-control" name="komentar_{{item.id_produk}}" rows="3"></textarea>
+                </div>
+
+                {# TAMBAHAN BARU: Input untuk upload foto/video #}
+                <div class="mb-3">
+                    <label for="media_{{item.id_produk}}" class="form-label">Unggah Foto/Video (Opsional):</label>
+                    <input class="form-control" type="file" name="media_{{item.id_produk}}" accept="image/*,video/*">
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Kirim Ulasan</button>
+    </form>
+</div>
+
+<style>
+/* CSS untuk membuat bintang rating interaktif */
+.rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.rating > input{ display:none; }
+.rating > label {
+    position: relative;
+    width: 1.1em;
+    font-size: 2rem;
+    color: #FFD700;
+    cursor: pointer;
+}
+.rating > label::before{ 
+    content: "\f005";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    opacity: 0.5;
+}
+.rating > input:checked ~ label::before,
+.rating:not(:checked) > label:hover ~ label::before,
+.rating:not(:checked) > label:hover::before {
+    opacity: 1;
+}
+</style>
+{% endblock %}

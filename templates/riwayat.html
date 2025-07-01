@@ -1,56 +1,70 @@
- {% extends "layout.html" %}
-    {% block content %}
+{% extends "layout.html" %}
+{% block title %}Riwayat Pesanan{% endblock %}
 
-    <div class="dashboard-card">
-        <h2>Riwayat Pembelian</h2>
-        {# Bagian untuk menampilkan pesan flash (sukses/error) #}
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+{% block content %}
+<div class="container my-4">
+    <h2>Riwayat Pesanan Anda</h2>
+    <hr>
 
-        {# Memeriksa apakah ada data transaksi untuk ditampilkan #}
-        {% if transaksi %}
-        <div class="transaction-list">
-            {# Loop (ulang) setiap transaksi dalam list 'transaksi' yang dikirim dari app.py #}
-            {% for t in transaksi %}
-            <div class="transaction-item">
-                <div class="item-header">
-                    {# Menampilkan tanggal transaksi dengan format yang rapi #}
-                    <span class="transaction-date"><i class="fas fa-calendar-alt"></i> {{ t.tanggal }}</span>
-                    {# Menampilkan status transaksi (misal: "completed") #}
-                    <span class="transaction-status {{ t.status|lower }}">{{ t.status }}</span>
-                </div>
-                <div class="item-details">
-                    {# Menampilkan gambar produk, jika ada. Jika tidak, pakai gambar default. #}
-                    {% if t.product_image %}
-                    <img src="{{ url_for('static', filename='uploads/' + t.product_image) }}" alt="{{ t.product_name }}" class="product-thumbnail">
-                    {% else %}
-                    <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" class="product-thumbnail">
-                    {% endif %}
-                    <div class="product-info">
-                        {# Menampilkan nama produk #}
-                        <p class="product-name"><strong>{{ t.product_name }}</strong></p>
-                        {# Menampilkan kuantitas dan harga per unit #}
-                        <p class="product-quantity">{{ t.jumlah }} x Rp{{ t.price_at_purchase|int }}</p>
-                    </div>
-                    <div class="total-price">
-                        Total: <span class="price-amount">Rp{{ t.total_harga|int }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        {# Pesan jika tidak ada riwayat pembelian #}
-        <p>Anda belum memiliki riwayat pembelian.</p>
-        <a href="{{ url_for('home_buyer') }}" class="btn btn-primary" style="margin-top: 20px;">Mulai Belanja</a>
-        {% endif %}
+    {# Navigasi Tab: Kita tambahkan atribut data-status untuk dibaca oleh JavaScript #}
+    <ul class="nav nav-tabs" id="riwayatTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="semua-tab" data-bs-toggle="tab" type="button" role="tab" data-status="semua">Semua</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="belum-bayar-tab" data-bs-toggle="tab" type="button" role="tab" data-status="menunggu_pembayaran">Belum Dibayar</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="diproses-tab" data-bs-toggle="tab" type="button" role="tab" data-status="diproses">Diproses</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dikirim-tab" data-bs-toggle="tab" type="button" role="tab" data-status="dikirim">Dikirim</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="selesai-tab" data-bs-toggle="tab" type="button" role="tab" data-status="selesai">Selesai</button>
+        </li>
+    </ul>
+
+    {# Kontainer untuk menampilkan hasil. Awalnya akan diisi dengan data 'semua' #}
+    <div class="tab-content" id="riwayatContent">
+        {# Kita panggil template partial untuk tampilan awal #}
+        {% include '_riwayat_list.html' %}
     </div>
-{% endblock %}
+</div>
 
+{# --- BAGIAN JAVASCRIPT --- #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ambil semua tombol tab
+        const tabs = document.querySelectorAll('#riwayatTab button[data-bs-toggle="tab"]');
+        // Ambil kontainer konten
+        const contentContainer = document.getElementById('riwayatContent');
+
+        // Tambahkan event listener untuk setiap tombol tab
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function (event) {
+                // Jangan lakukan aksi default
+                event.preventDefault();
+
+                // Ambil status dari atribut 'data-status' yang kita buat
+                const status = this.dataset.status;
+
+                // Tampilkan loading indicator (opsional tapi bagus)
+                contentContainer.innerHTML = '<div class="p-5 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+                // Lakukan request ke endpoint baru kita
+                fetch(`/filter-riwayat/${status}`)
+                    .then(response => response.text()) // Ambil respons sebagai teks (HTML)
+                    .then(html => {
+                        // Masukkan potongan HTML yang kita dapat ke dalam kontainer
+                        contentContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching riwayat:', error);
+                        contentContainer.innerHTML = '<div class="alert alert-danger">Gagal memuat riwayat.</div>';
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

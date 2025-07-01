@@ -1,40 +1,45 @@
 {% extends "layout.html" %}
-{% block title %}Home Pembeli{% endblock %}
-{% block content %}
+{% block title %}Home{% endblock %}
 
+{% block content %}
 <div class="dashboard-card">
     <h2>Halo, {{ session['nama'] }}!</h2>
-    <p>Selamat datang sebagai pembeli.</p>
+    <p>Selamat datang di Toko Bunga Indah. Temukan bunga favoritmu di bawah ini.</p>
 </div>
 
 <hr>
 
 <h3>Daftar Produk</h3>
+
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
+        <div class="flash-messages">
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
     {% endif %}
 {% endwith %}
 
-<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+<div class="produk-list">
     {% if produk %}
         {% for p in produk %}
-            <div class="product-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; width: 220px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background-color: white;">
-                {% if p.image %}
-                <img src="{{ url_for('static', filename='uploads/' + p.image) }}" alt="{{ p.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;">
+            <div class="produk-card">
+                <a href="{{ url_for('product_detail', product_id=p.id) }}">
+                    <img src="{{ url_for('static', filename='uploads/' + p.main_image if p.main_image else 'images/default_product.png') }}" alt="{{ p.name }}" class="product-thumbnail">
+                </a>
+
+                <h4><a href="{{ url_for('product_detail', product_id=p.id) }}" class="product-link">{{ p.name }}</a></h4>
+                
+                {% if p.min_price is not none %}
+                    <p class="mb-1"><strong>Mulai dari:</strong> Rp{{ "{:,.0f}".format(p.min_price) }}</p>
                 {% else %}
-                <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;">
+                    <p class="text-muted mb-1">Harga belum diatur</p>
                 {% endif %}
-                <p><strong>Nama:</strong> {{ p['name'] }}</p>
-                <p><strong>Harga:</strong> Rp{{ p['price']|int }}</p>
-                <p style="font-size: 0.9em; color: #777;">Stok: {{ p['stock'] }}</p>
-                <form method="POST" action="{{ url_for('add_to_cart', product_id=p['id']) }}">
-                    <button type="submit" style="background-color: #4a934a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">Tambah ke Keranjang</button>
-                </form>
+                
+                <small class="text-muted">
+                    Oleh: <a href="{{ url_for('shop_detail', shop_username=p.username_toko) }}" class="toko-link">{{ p.nama_toko }}</a>
+                </small>
             </div>
         {% endfor %}
     {% else %}
@@ -42,9 +47,29 @@
     {% endif %}
 </div>
 
-<div style="text-align: center; margin-top: 30px;">
-    <a href="{{ url_for('cart') }}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Lihat Keranjang Belanja</a>
-</div>
-
+<style>
+    .product-link, .toko-link {
+        text-decoration: none;
+        color: inherit;
+    }
+    .product-link {
+        color: #333; /* Warna untuk judul produk */
+    }
+    .toko-link {
+        font-weight: 600;
+        color: #555; /* Warna untuk nama toko */
+    }
+    .product-link:hover, .toko-link:hover {
+        color: #007bff; /* Warna saat cursor di atas link */
+        text-decoration: underline;
+    }
+    .produk-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .produk-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
 
 {% endblock %}

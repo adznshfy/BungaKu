@@ -2,70 +2,75 @@
 {% block title %}Keranjang Belanja{% endblock %}
 
 {% block content %}
-<h2>Keranjang Belanja Anda</h2>
+<div class="container my-4">
+    <h2>Keranjang Belanja Anda</h2>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
             {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
+                <div class="alert alert-{{ category }}">{{ message }}</div>
             {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+        {% endif %}
+    {% endwith %}
 
-{% if cart_items %}
-    <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Produk</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Gambar</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Harga Satuan</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Kuantitas</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Subtotal</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-            <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">{{ item.name }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd;">
-                    {% if item.image %}
-                    <img src="{{ url_for('static', filename='uploads/' + item.image) }}" alt="{{ item.name }}" style="width: 50px; height: 50px; object-fit: cover;">
-                    {% else %}
-                    <img src="{{ url_for('static', filename='images/default_product.png') }}" alt="No Image" style="width: 50px; height: 50px; object-fit: cover;">
-                    {% endif %}
-                </td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.price|int }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
-                    <form action="{{ url_for('update_cart', product_id=item.product_id) }}" method="POST" style="display: inline-flex; align-items: center;">
-                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.stock_available }}" style="width: 60px; text-align: center; margin-right: 5px;">
-                        <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Update</button>
-                    </form>
-                </td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">Rp{{ item.total_item_price|int }}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
-                    <form action="{{ url_for('remove_from_cart', product_id=item.product_id) }}" method="POST">
-                        <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Hapus</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4" style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Total:</strong></td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;"><strong>Rp{{ total_cart_price|int }}</strong></td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-    <div style="text-align: right; margin-top: 20px;">
-        <a href="{{ url_for('checkout') }}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Lanjutkan ke Checkout</a>
-    </div>
-{% else %}
-    <p>Keranjang belanja Anda kosong.</p>
-    <p><a href="{{ url_for('home_buyer') }}">Belanja Sekarang!</a></p>
-{% endif %}
+    {% if cart_items %}
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Produk</th>
+                    <th class="text-end">Harga Satuan</th>
+                    <th class="text-center">Kuantitas</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='uploads/' + item.image if item.image else 'images/default_product.png') }}" alt="{{ item.product_name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" class="me-3">
+                            <div>
+                                <strong class="d-block">{{ item.product_name }}</strong>
+                                <small class="text-muted">Varian: {{ item.variation_name }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end">Rp{{ "{:,.0f}".format(item.price) }}</td>
+                    <td class="text-center">
+                        <form action="{{ url_for('update_cart', variation_id=item.variation_id) }}" method="POST" class="d-flex justify-content-center">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.stock_available }}" class="form-control" style="width: 70px;">
+                            <button type="submit" class="btn btn-sm btn-primary ms-2">Update</button>
+                        </form>
+                        <small class="text-muted">Stok: {{ item.stock_available }}</small>
+                    </td>
+                    <td class="text-end">
+                        Rp{{ "{:,.0f}".format(item.price * item.quantity) }}
+                    </td>
+                    <td class="text-center">
+                        <form action="{{ url_for('remove_from_cart', variation_id=item.variation_id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total Keranjang:</strong></td>
+                    <td class="text-end"><strong>Rp{{ "{:,.0f}".format(total_cart_price) }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="text-end mt-4">
+            <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">Lanjutkan ke Checkout</a>
+        </div>
+    {% else %}
+        <div class="text-center p-5">
+            <h4>Keranjang belanja Anda kosong.</h4>
+            <a href="{{ url_for('home_buyer') }}" class="btn btn-primary mt-3">Mulai Belanja Sekarang!</a>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

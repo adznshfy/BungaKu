@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}Registrasi Penjual{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Buka Toko Anda</h3>
+        </div>
+        <div class="card-body">
+            <p>Lengkapi semua detail di bawah ini untuk mulai berjualan.</p>
+            <hr>
+            <form action="{{ url_for('proses_registrasi_penjual') }}" method="POST" enctype="multipart/form-data">
+                
+                <div class="form-group mb-3">
+                    <label for="nama_toko" class="font-weight-bold">Nama Toko</label>
+                    <input type="text" name="nama_toko" id="nama_toko" class="form-control" placeholder="Contoh: Toko Bunga Jia" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="username_toko" class="font-weight-bold">Username Toko</label>
+                    <input type="text" name="username_toko" id="username_toko" class="form-control" placeholder="contoh: tokobungajia (tanpa spasi)" required>
+                    <small class="form-text text-muted">Akan digunakan untuk URL toko Anda. Gunakan huruf kecil, angka, tanpa spasi.</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="no_hp_toko" class="font-weight-bold">Nomor HP Penjual</label>
+                    <input type="tel" name="no_hp_toko" id="no_hp_toko" class="form-control" placeholder="08xxxxxxxxxx" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="alamat_toko" class="font-weight-bold">Alamat Toko</label>
+                    <textarea name="alamat_toko" id="alamat_toko" class="form-control" rows="4" placeholder="Masukkan alamat lengkap toko Anda (Jalan, Kota, Kode Pos)" required></textarea>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="deskripsi_toko" class="font-weight-bold">Deskripsi Singkat Toko</label>
+                    <textarea name="deskripsi_toko" id="deskripsi_toko" class="form-control" rows="4" placeholder="Contoh: Menjual berbagai macam bunga segar untuk segala acara." required></textarea>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="foto_toko" class="font-weight-bold">Foto Toko / Logo</label>
+                    <input type="file" name="foto_toko" id="foto_toko" class="form-control-file" required>
+                </div>
+                <hr>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Metode Pembayaran (Wajib pilih min. 1)</label>
+                    <div><input type="checkbox" name="pembayaran" value="Transfer Bank" id="cb-bank"> <label for="cb-bank">Transfer Bank</label></div>
+                    <div><input type="checkbox" name="pembayaran" value="COD" id="cb-cod"> <label for="cb-cod">COD (Bayar di Tempat)</label></div>
+                    <div><input type="checkbox" name="pembayaran" value="OVO" id="cb-ovo"> <label for="cb-ovo">OVO</label></div>
+                    <div><input type="checkbox" name="pembayaran" value="GoPay" id="cb-gopay"> <label for="cb-gopay">GoPay</label></div>
+                </div>
+                <hr>
+                
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Opsi Pengiriman (Wajib pilih min. 1)</label>
+                    <div><input type="checkbox" name="pengiriman" value="JNE" id="cb-jne"> <label for="cb-jne">JNE</label></div>
+                    <div><input type="checkbox" name="pengiriman" value="J&T" id="cb-jnt"> <label for="cb-jnt">J&T</label></div>
+                    <div><input type="checkbox" name="pengiriman" value="SiCepat" id="cb-sicepat"> <label for="cb-sicepat">SiCepat</label></div>
+                    <div><input type="checkbox" name="pengiriman" value="GoSend" id="cb-gosend"> <label for="cb-gosend">GoSend / GrabExpress (Instant)</label></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" style="width: 100%; padding: 10px; margin-top: 1rem;">Konfirmasi dan Jadi Penjual</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

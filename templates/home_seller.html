@@ -1,8 +1,17 @@
 {% extends "layout.html" %}
-{% block title %}Home Penjual{% endblock %}
+{% block title %}Dashboard Penjual{% endblock %}
+
 {% block content %}
 <div class="dashboard-card">
-    <h2>Halo, {{ session['nama'] }}!</h2>
-    <p>Selamat datang sebagai penjual.</p>
+    <h2>Dashboard Penjual</h2>
+    <p>Halo, {{ session['nama'] }}! Kelola toko Anda dari sini.</p>
 </div>
+
+<hr>
+
+<div class="seller-actions">
+    <a href="{{ url_for('seller_product') }}" class="btn btn-info btn-lg">Kelola Produk Saya</a>
+    <a href="{{ url_for('add_product') }}" class="btn btn-success btn-lg">+ Tambah Produk Baru</a>
+</div>
+
 {% endblock %}

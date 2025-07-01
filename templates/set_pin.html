@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}Atur PIN Keamanan{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 500px; margin: auto;">
+    <div class="card">
+        <div class="card-header"><h4>Atur PIN Keamanan (6 Digit)</h4></div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group mb-3">
+                    <label>PIN Baru</label>
+                    <input type="password" name="pin1" class="form-control" maxlength="6" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Konfirmasi PIN Baru</label>
+                    <input type="password" name="pin2" class="form-control" maxlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan PIN</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

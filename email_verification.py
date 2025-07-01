@@ -17,7 +17,7 @@ def verify_email():
     otp = randint(100000, 999999)
     session['otp'] = otp
 
-    msg = Message(subject='Kode OTP Verifikasi', sender='naswajihaan@gmail.com', recipients=[email])
+    msg = Message(subject='Kode OTP Verifikasi', sender='bungaku2425@gmail.com', recipients=[email])
     msg.body = f"Kode OTP kamu adalah: {otp}"
     mail.send(msg)
 
@@ -29,38 +29,56 @@ def validate_otp():
     try:
         user_otp = int(request.form['otp'])
     except ValueError:
-        flash("OTP tidak valid. Masukkan angka 6 digit.")
+        flash("OTP tidak valid. Masukkan angka 6 digit.", "error")
         return redirect(url_for('email_bp.verify_email'))
 
     if user_otp == session.get('otp'):
         data = session.pop('pending_register')
+        
+        nama = data['nama']
+        alamat = data['alamat']
+        email = data['email']
+        phone = data['phone']
+        password = data['password']
 
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        try:
+            # 1. Buat entri di tabel 'profile'
+            cur.execute("""
+                INSERT INTO profile (nama, alamat, no_telp) 
+                VALUES (%s, %s, %s)
+            """, (nama, alamat, phone))
+            
+            profile_id = cur.lastrowid
 
-        # Simpan ke tabel users
-        cur.execute("""
-            INSERT INTO users (nama, alamat, email, phone, password, role)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (data['nama'], data['alamat'], data['email'], data['phone'], data['password'], None))
+            # Karena 'pembeli' sekarang memiliki id_level = 4
+            buyer_level_id = 4
+            
+            # 2. Buat entri di tabel 'users'
+            cur.execute("""
+                INSERT INTO users (email, password, id_level, id_profile) 
+                VALUES (%s, %s, %s, %s)
+            """, (email, password, buyer_level_id, profile_id))
 
-        mysql.connection.commit()
+            user_id = cur.lastrowid
+            mysql.connection.commit()
 
-        cur.execute("SELECT LAST_INSERT_ID() as id_user")
-        id_user = cur.fetchone()['id_user']
+            # Set session untuk user yang baru login
+            session['id_user'] = user_id
+            session['nama'] = nama
+            session['email'] = email
+            session['id_level'] = buyer_level_id
+            session['id_profile'] = profile_id
 
-        cur.execute("""
-            INSERT INTO profile (nama, email, alamat, no_telp, id_user)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (data['nama'], data['email'], data['alamat'], data['phone'], id_user))
+            flash(f"Registrasi berhasil! Selamat datang, {nama}!", "success")
+            return redirect(url_for('home_buyer'))
 
-        mysql.connection.commit()
-        cur.close()
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f"Terjadi kesalahan saat registrasi: {e}", "error")
+            return redirect(url_for('register'))
+        finally:
+            cur.close()
 
-        session['id_user'] = id_user
-        session['nama'] = data['nama']
-        session['email'] = data['email']
-
-        return redirect(url_for('choose_role'))
-
-    flash("OTP salah. Silakan coba lagi.")
+    flash("OTP salah. Silakan coba lagi.", "error")
     return redirect(url_for('email_bp.verify_email'))

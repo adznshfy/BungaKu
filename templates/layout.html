@@ -1,119 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %} - Toko Bunga Indah</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
-  <nav class="navbar">
-    <div class="nav-left">
-      <button id="navToggle" class="toggle-button">☰</button>
-      <span class="logo">🌸 <strong>Toko Bunga Indah</strong> 🌸</span>
-      <input type="text" class="search-bar" placeholder="Cari bunga...">
-    </div>
-
-    <div class="nav-right">
-      <button id="themeToggle" class="toggle-button">
-        <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#333"></svg>
-      </button>
-      <div class="profile-menu">
-        <img id="profileIcon" src="{{ url_for('static', filename='images/profile.png') }}" alt="Profile" class="profile-icon" tabindex="0">
-        <div id="profileDropdown" class="dropdown-menu">
-          <a href="#">Pembelian</a>
-          <a href="#">Pengaturan</a>
-          <a href="{{ url_for('profile') }}">Edit Profil</a>
-          <a href="{{ url_for('logout') }}">Keluar</a>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <button id="navToggle" class="toggle-button">☰</button>
+            <span class="brand">
+                <img class="logo" src="../static/images/logo.png"> BungaKu
+            </span>
         </div>
-      </div>
-    </div>
-  </nav>
+        <div class="nav-right">
+            <div class="profile-menu">
+                <img id="profileIcon" src="{{ url_for('static', filename='../static/images/default_profile.png') }}" alt="Profile" class="profile-icon">
+                <div id="profileDropdown" class="dropdown-menu">
+                  <a href="{{ url_for('profile') }}">Edit Profil</a>
+                  <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+                  <a href="{{ url_for('logout') }}">Keluar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-  <div class="nav-links" id="navLinks">
-    {# Di dalam bagian <div class="nav-links" id="navLinks"> #}
-    {% if session.get('role') == 'pembeli' %}
-      <a href="{{ url_for('home_buyer') }}">Home</a>
-      <a href="{{ url_for('home_buyer') }}">Lihat Produk</a>
-      <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
-      **<a href="{{ url_for('cart') }}">Keranjang
-        {% if session.get('cart') %}({{ session['cart']|length }}){% endif %}
-      </a>**
-      <a href="{{ url_for('profile') }}">Profil</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
-    {% elif session.get('role') == 'penjual' %}
-      <a href="{{ url_for('home_seller') }}">Home</a>
-      <a href="{{ url_for('home_seller') }}">Dashboard Penjual</a>
-      <a href="{{ url_for('seller_product') }}">Manajemen Produk</a>
-      <a href="{{ url_for('profile') }}">Profil</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
+<div class="nav-links" id="navLinks">
+    {# Cek apakah user sudah login #}
+    {% if 'id_user' in session %}
+        <a href="{{ url_for('home_buyer') }}">Home</a>
+        <a href="{{ url_for('profile') }}">Profil</a>
+        <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+        <a href="{{ url_for('cart') }}">Keranjang</a>
+
+        {# Link ini HANYA akan dibuat jika yang login adalah PENJUAL (level 3) #}
+        {% if session.get('id_level') == 3 %}
+            <a href="{{ url_for('dashboard_penjual') }}">Dashboard Penjual</a>
+        {% endif %}
+
+        {# Link untuk ADMIN/PENGELOLA (level 1 atau 2) #}
+        {% if session.get('id_level') <= 2 %}
+             <a href="#">Admin Panel</a> {# Ganti dengan url_for admin Anda jika sudah ada #}
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}">Keluar</a>
+
+    {# Jika user belum login #}
     {% else %}
-      <a href="{{ url_for('home') }}">Home</a>
-      <a href="{{ url_for('login') }}">Login</a>
-      <a href="{{ url_for('register') }}">Register</a>
+        <a href="{{ url_for('home') }}">Welcome</a>
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('register') }}">Register</a>
     {% endif %}
-  </div>
+</div>
 
-  <main class="container" style="flex: 1">
-    {% block content %}{% endblock %}
-  </main>
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
 
-  <footer class="site-footer">
-    <div class="footer-content">
-      <strong>Toko Bunga Indah</strong> — Teman setia momenmu 💐
-      <div class="footer-info">
-        <span>📧 Email: naswajihaan@gmail.com</span>
-        <span>📷 IG: @tokobungaindah</span>
-        <span>☎️ WA: 0812-3456-7891</span>
-      </div>
-    </div>
-  </footer>
+    <footer class="site-footer">
+        <div class="footer-content">
+          <strong>Toko Bunga Indah</strong> — Teman setia momenmu 💐
+        </div>
+    </footer>
 
-  <script>
-    const navToggle = document.getElementById("navToggle");
-    const navLinks = document.getElementById("navLinks");
-    const profileIcon = document.getElementById("profileIcon");
-    const profileDropdown = document.getElementById("profileDropdown");
-    const themeToggleBtn = document.getElementById("themeToggle");
-    const themeIcon = document.getElementById("themeIcon");
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Script untuk toggle navigasi samping dan dropdown profil
+        const navToggle = document.getElementById("navToggle");
+        const navLinks = document.getElementById("navLinks");
+        const profileIcon = document.getElementById("profileIcon");
+        const profileDropdown = document.getElementById("profileDropdown");
 
-    navToggle.addEventListener("click", () => {
-      navLinks.classList.toggle("active");
-    });
+        if(navToggle) {
+            navToggle.addEventListener("click", () => {
+                navLinks.classList.toggle("active");
+            });
+        }
 
-    profileIcon.addEventListener("click", (e) => {
-      e.stopPropagation();
-      profileDropdown.style.display =
-        profileDropdown.style.display === "flex" ? "none" : "flex";
-    });
+        if(profileIcon) {
+            profileIcon.addEventListener("click", (e) => {
+                e.stopPropagation();
+                profileDropdown.style.display =
+                profileDropdown.style.display === "flex" ? "none" : "flex";
+            });
+        }
 
-    window.addEventListener("click", (e) => {
-      if (!profileDropdown.contains(e.target)) {
-        profileDropdown.style.display = "none";
-      }
-    });
-
-    function applyThemeIcon(isDark) {
-      themeIcon.setAttribute("fill", isDark ? "white" : "#333");
-      themeIcon.innerHTML = isDark
-        ? '<path d="M21.64 13a9 9 0 01-11.64-11.64 9 9 0 1011.64 11.64z"/>'
-        : '<path d="M12 4.354a1 1 0 011 0l1.414.707a1 1 0 00.894 0l1.414-.707a1 1 0 011.414 1.414l-.707 1.414a1 1 0 000 .894l.707 1.414a1 1 0 01-1.414 1.414l-1.414-.707a1 1 0 00-.894 0l-1.414.707a1 1 0 01-1.414-1.414l.707-1.414a1 1 0 000-.894l-.707-1.414a1 1 0 011.414-1.414zM12 8a4 4 0 100 8 4 4 0 000-8z"/>';
-    }
-
-    function toggleDarkMode() {
-      const isDark = document.body.classList.toggle("dark-mode");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-      applyThemeIcon(isDark);
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const savedTheme = localStorage.getItem("theme");
-      const isDark = savedTheme === "dark";
-      if (isDark) document.body.classList.add("dark-mode");
-      applyThemeIcon(isDark);
-    });
-
-    themeToggleBtn.addEventListener("click", toggleDarkMode);
+        window.addEventListener("click", (e) => {
+            if (profileDropdown && !profileDropdown.contains(e.target) && e.target !== profileIcon) {
+                profileDropdown.style.display = "none";
+            }
+        });
   </script>
 </body>
 </html>

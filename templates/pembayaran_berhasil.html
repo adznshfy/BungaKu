@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Pembayaran Berhasil{% endblock %}
+{% block content %}
+<div class="container text-center" style="padding-top: 5rem; padding-bottom: 5rem;">
+    <div style="max-width: 500px; margin: auto;">
+        <i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>
+        <h1 class="mt-3">Pembayaran Berhasil!</h1>
+        <p class="lead">Terima kasih! Pesanan Anda #{{ transaksi_id }} telah kami terima dan akan segera diproses oleh penjual.</p>
+        <hr>
+        <p>Anda bisa melihat detail dan status pengiriman pesanan Anda di halaman riwayat pembelian.</p>
+        <a href="{{ url_for('riwayat') }}" class="btn btn-primary mt-2">Kunjungi Halaman Riwayat Pembelian</a>
+    </div>
+</div>
+{% endblock %}
