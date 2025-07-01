@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block title %}Detail Pengaduan #{{ complaint.id }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <a href="{{ url_for('dashboard_pengelola') }}" class="btn btn-secondary mb-3">
+        &laquo; Kembali ke Dashboard
+    </a>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Detail Pengaduan #{{ complaint.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Subjek:</strong><br>{{ complaint.subjek }}</p>
+
+                    {% if complaint.id_transaksi %}
+                    <hr>
+                    <div>
+                        <strong>Terkait Pesanan:</strong>
+                            <p class="mb-0">ID Transaksi: #{{ complaint.id_transaksi }}</p>
+                            <p class="mb-0">Metode Pembayaran: {{ complaint.metode_pembayaran }}</p>
+                            <p class="mb-0">Total Harga: Rp {{ "{:,.0f}".format(complaint.total_harga) }}</p>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div>
+                        <strong>Isi Pengaduan:</strong>
+                        <p class="card-text" style="white-space: pre-wrap; margin-top: 5px;">{{ complaint.isi_pengaduan }}</p>
+                    </div>
+                    <hr>
+                    <small class="text-muted">
+                        Dilaporkan oleh: <strong>{{ complaint.user_name }}</strong> ({{ complaint.peran_pelapor.capitalize() }})
+                        {% if complaint.peran_pelapor == 'penjual' and complaint.nama_toko %}
+                            <br>
+                            Toko: <strong>{{ complaint.nama_toko }}</strong>
+                        {% endif %}
+                        <br>
+                        Pada: {{ complaint.tanggal_lapor.strftime('%d %b %Y, %H:%M') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5>Tanggapan & Aksi</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('detail_pengaduan', complaint_id=complaint.id) }}">
+                        <div class="mb-3">
+                            <label for="tanggapan" class="form-label fw-bold">Tulis Balasan:</label>
+                            <textarea name="tanggapan" id="tanggapan" rows="8" class="form-control" required>{{ complaint.tanggapan_pengelola or '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label fw-bold">Ubah Status:</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="Baru" {% if complaint.status == 'Baru' %}selected{% endif %}>Baru</option>
+                                <option value="Diproses" {% if complaint.status == 'Diproses' %}selected{% endif %}>Diproses</option>
+                                <option value="Ditolak" {% if complaint.status == 'Ditolak' %}selected{% endif %}>Ditolak</option>
+                                <option value="Selesai" {% if complaint.status == 'Selesai' %}selected{% endif %}>Selesai</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Kirim Balasan & Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

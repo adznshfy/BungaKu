@@ -16,11 +16,11 @@
     {% endif %}
 
     <form method="POST" action="{{ url_for('register') }}">
-        <input type="text" name="nama" placeholder="Nama" required>
-        <input type="text" name="alamat" placeholder="Alamat" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="text" name="phone" placeholder="No HP" required>
-        <input type="password" name="password" placeholder="Password (min 6 karakter)" required minlength="6">
+        <label for="">Nama:</label><input type="text" name="nama" placeholder="Nama" required>
+        <label for="">Alamat:</label><input type="text" name="alamat" placeholder="Alamat" required>
+        <label for="">Email:</label><input type="email" name="email" placeholder="Email" required>
+        <label for="">No HP:</label><input type="text" name="phone" placeholder="No HP" required>
+        <label for="">Password:</label><input type="password" name="password" placeholder="Password (min 6 karakter)" required minlength="6">
         <button type="submit">Daftar</button>
     </form>
 </div>

@@ -10,13 +10,12 @@ import email_verification
 from werkzeug.utils import secure_filename
 from admin import admin_bp
 
-
 load_dotenv()
 
 app = Flask(__name__)
 
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'jihaannaswa'
+app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'bungaku'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
@@ -30,11 +29,13 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEBUG'] = True
 email_verification.mail.init_app(app)
 
+
 email_verification.mysql = mysql
 app.register_blueprint(admin_bp)
 
 app.secret_key = "017#!NaswaJia)!!"
 app.register_blueprint(email_verification.email_bp)
+
 
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Maksimum 2MB
@@ -120,7 +121,18 @@ def login():
             session['email'] = user['email']
 
             flash(f"Selamat datang kembali, {user['nama']}!", "success")
-            return redirect(url_for('home_buyer')) # Arahkan semua ke dashboard utama
+            
+            id_level = user['id_level']
+            if id_level == 1: # Admin
+                return redirect(url_for('management_bp.dashboard_admin'))
+            elif id_level == 2: # Pengelola
+                return redirect(url_for('dashboard_pengelola'))
+            elif id_level == 5: # Pemimpin
+                return redirect(url_for('management_bp.dashboard_pemimpin'))
+            elif id_level == 3: # Penjual
+                return redirect(url_for('dashboard_penjual'))
+            else: # Pembeli (level 4) atau default
+                return redirect(url_for('home_buyer')) # Arahkan semua ke dashboard utama
         else:
             error = "Gagal login. Cek kembali email atau password Anda."
     return render_template("login.html", error=error)
@@ -329,15 +341,22 @@ def set_pin():
 # Ganti seluruh fungsi home_buyer() Anda dengan kode ini
 @app.route("/home-buyer")
 def home_buyer():
-    # Keamanan: Memastikan pengguna sudah login
-    if 'id_user' not in session:
-        flash("Silakan login untuk melihat produk.", "error")
+    # --- PENJAGA BARU ---
+    # Hanya pembeli (4) dan penjual (3) yang boleh masuk
+    if 'id_user' not in session or session.get('id_level') not in [3, 4]:
+        flash("Halaman ini tidak tersedia untuk peran Anda.", "error")
+
+        # Arahkan petinggi ke dashboard mereka masing-masing jika mencoba akses
+        id_level = session.get('id_level')
+        if id_level == 1: return redirect(url_for('dashboard_admin'))
+        if id_level == 2: return redirect(url_for('dashboard_pengelola'))
+        if id_level == 5: return redirect(url_for('dashboard_pemimpin'))
+
+        # Jika tidak ada sesi, arahkan ke login
         return redirect(url_for('login'))
+    # --- AKHIR PENJAGA ---
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Query ini diubah untuk JOIN dengan tabel 'users' dan 'toko'
-    # agar bisa mengambil nama_toko dan username_toko
     cursor.execute("""
         SELECT 
             p.id, p.name, p.description, p.id_user, 
@@ -350,8 +369,7 @@ def home_buyer():
     """)
     produk = cursor.fetchall()
     cursor.close()
-    
-    # Mengirim data produk yang sekarang sudah berisi info toko ke template
+
     return render_template("home_buyer.html", produk=produk)
 
 @app.route('/home-seller')
@@ -542,24 +560,22 @@ def update_toko():
 
 @app.route('/proses-pesanan/<int:transaksi_id>', methods=['POST'])
 def proses_pesanan(transaksi_id):
-    # Keamanan: Pastikan yang akses adalah penjual
     if session.get('id_level') != 3:
         flash("Aksi tidak diizinkan.", "error")
         return redirect(url_for('home_buyer'))
 
+    nomor_resi = request.form.get('nomor_resi')
+    if not nomor_resi:
+        flash("Nomor resi wajib diisi.", "error")
+        return redirect(url_for('dashboard_penjual'))
+
     cur = mysql.connection.cursor()
-    # TODO: Tambahkan validasi untuk memastikan penjual ini berhak memproses pesanan ini
-    
-    # Update status pesanan menjadi 'dikirim'
-    cur.execute("UPDATE transaksi SET status = 'dikirim' WHERE id_transaksi = %s", (transaksi_id,))
+    cur.execute("UPDATE transaksi SET status = 'dikirim', nomor_resi = %s WHERE id_transaksi = %s", (nomor_resi, transaksi_id,))
     mysql.connection.commit()
     cur.close()
 
-    flash(f"Pesanan #{transaksi_id} telah ditandai sebagai 'Dikirim'.", "success")
+    flash(f"Pesanan #{transaksi_id} telah ditandai sebagai 'Dikirim' dengan resi {nomor_resi}.", "success")
     return redirect(url_for('dashboard_penjual'))
-
-
-# Ganti fungsi product_detail yang lama dengan yang ini di app.py
 
 @app.route('/produk/<int:product_id>')
 def product_detail(product_id):
@@ -1336,8 +1352,13 @@ def pembayaran(transaksi_id):
     transaksi = cur.fetchone()
     cur.close()
 
-    if not transaksi or transaksi['status'] != 'menunggu_pembayaran':
-        flash("Transaksi tidak ditemukan atau sudah diproses.", "error")
+    if not transaksi:
+        flash("Transaksi tidak ditemukan. Mungkin ID tidak cocok atau bukan milik Anda.", "error")
+        return redirect(url_for('riwayat'))
+
+    # 2. Jika ditemukan, baru cek statusnya
+    if transaksi['status'] != 'menunggu_pembayaran':
+        flash(f"Transaksi ini sudah dalam status '{transaksi['status']}' dan tidak bisa dibayar lagi.", "error")
         return redirect(url_for('riwayat'))
 
     return render_template('pembayaran.html', transaksi=transaksi)
@@ -1539,6 +1560,112 @@ def simpan_rating(transaksi_id):
         print(f"Error simpan_rating: {e}") # Untuk debug
 
     return redirect(url_for('riwayat'))
+
+@app.route('/admin/dashboard')
+def dashboard_admin():
+    # ... (kode di dalam fungsi ini tidak perlu diubah) ...
+    if 'loggedin' not in session or session.get('id_level') != 1:
+        flash('Anda harus login sebagai Admin.', 'warning')
+        return redirect(url_for('management_bp.login_khusus'))
+    return f"<h1>Dashboard Admin untuk {session.get('nama')}</h1>"
+
+
+@app.route('/dashboard-pengelola')
+def dashboard_pengelola():
+    if 'id_user' not in session or session.get('id_level') != 2:
+        flash("Halaman ini hanya untuk Pengelola.", "error")
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT 
+            aduan.*, 
+            prof.nama as user_name,
+            t.nama_toko 
+        FROM pengaduan aduan
+        JOIN users u ON aduan.id_pelapor = u.id_user
+        JOIN profile prof ON u.id_profile = prof.id_profile
+        LEFT JOIN toko t ON u.id_user = t.id_user
+        ORDER BY aduan.status ASC, aduan.tanggal_lapor DESC
+    """)
+    daftar_pengaduan = cur.fetchall()
+    cur.close()
+    
+    return render_template('dashboard_pengelola.html', complaints=daftar_pengaduan)
+
+@app.route('/pengaduan/<int:complaint_id>', methods=['GET', 'POST'])
+def detail_pengaduan(complaint_id):
+    if 'id_user' not in session or session.get('id_level') != 2:
+        flash("Halaman ini hanya untuk Pengelola.", "error")
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    if request.method == 'POST':
+        tanggapan = request.form['tanggapan']
+        status_baru = request.form['status']
+        cur.execute("""
+            UPDATE pengaduan 
+            SET tanggapan_pengelola = %s, status = %s, tanggal_tanggapan = NOW()
+            WHERE id = %s
+        """, (tanggapan, status_baru, complaint_id))
+        mysql.connection.commit()
+        flash("Balasan berhasil dikirim dan status telah diperbarui.", "success")
+        cur.close()
+        return redirect(url_for('dashboard_pengelola'))
+
+    cur.execute("""
+        SELECT 
+            aduan.*, 
+            prof.nama as user_name,
+            t.nama_toko,
+            trans.metode_pembayaran,
+            trans.total_harga
+        FROM pengaduan aduan
+        JOIN users u ON aduan.id_pelapor = u.id_user
+        JOIN profile prof ON u.id_profile = prof.id_profile
+        LEFT JOIN transaksi trans ON aduan.id_transaksi = trans.id_transaksi
+        LEFT JOIN toko t ON u.id_user = t.id_user
+        WHERE aduan.id = %s
+    """, (complaint_id,))
+    complaint = cur.fetchone()
+    cur.close()
+
+    if not complaint:
+        flash("Pengaduan tidak ditemukan.", "error")
+        return redirect(url_for('dashboard_pengelola'))
+
+    return render_template('detail_pengaduan.html', complaint=complaint)
+        
+# Tambahkan fungsi baru ini di dalam file app.py
+
+@app.route('/kirim-pengaduan', methods=['GET', 'POST'])
+def kirim_pengaduan():
+    if 'id_user' not in session or session.get('id_level') not in [3, 4]:
+        flash("Anda harus login sebagai pembeli atau penjual untuk mengirim pengaduan.", "error")
+        return redirect(url_for('login'))
+
+    id_transaksi = request.args.get('id_transaksi', None)
+
+    if request.method == 'POST':
+        id_pelapor = session['id_user']
+        subjek = request.form['subjek']
+        isi_pengaduan = request.form['isi_pengaduan']
+        id_transaksi_from_form = request.form.get('id_transaksi')
+        peran = 'penjual' if session.get('id_level') == 3 else 'pembeli'
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO pengaduan (id_pelapor, id_transaksi, peran_pelapor, subjek, isi_pengaduan)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (id_pelapor, id_transaksi_from_form, peran, subjek, isi_pengaduan))
+        mysql.connection.commit()
+        cur.close()
+
+        flash("Pengaduan Anda telah berhasil dikirim.", "success")
+        return redirect(url_for('home_buyer'))
+
+    return render_template('kirim_pengaduan.html', id_transaksi=id_transaksi)
 
 if __name__ == '__main__':
     app.run(debug=True)

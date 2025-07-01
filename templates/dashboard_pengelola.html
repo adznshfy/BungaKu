@@ -1,0 +1,84 @@
+{% extends "layout.html" %} {% block title %}Dashboard Pengelola{% endblock %}
+{% block content %}
+<div class="container my-4">
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h3>Daftar Pengaduan Pengguna</h3>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th style="width: 10%">Status</th>
+              <th>Subjek</th>
+              <th>Pelapor</th>
+              <th>Peran</th>
+              <th>Tanggal Lapor</th>
+              <th style="width: 15%">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if complaints %} {% for complaint in complaints %}
+            <tr>
+              <td>
+                {% if complaint.status == 'Baru' %}
+                <span class="badge bg-danger">{{ complaint.status }}</span>
+                {% elif complaint.status == 'Diproses' %}
+                <span class="badge bg-warning text-dark"
+                  >{{ complaint.status }}</span
+                >
+                {% else %}
+                <span class="badge bg-success">{{ complaint.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ complaint.subjek }}</td>
+              <td>
+                {{ complaint.user_name }} {% if complaint.peran_pelapor ==
+                'penjual' and complaint.nama_toko %}
+                <br /><small class="text-muted"
+                  >Toko: {{ complaint.nama_toko }}</small
+                >
+                {% endif %}
+              </td>
+              <td>{{ complaint.peran_pelapor.capitalize() }}</td>
+              <td>{{ complaint.tanggal_lapor.strftime('%d %b %Y, %H:%M') }}</td>
+              <td>
+                <a
+                  href="{{ url_for('detail_pengaduan', complaint_id=complaint.id) }}"
+                  class="btn btn-primary btn-sm"
+                >
+                  Lihat & Balas
+                </a>
+              </td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td colspan="6" class="text-center">
+                Belum ada pengaduan yang masuk.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

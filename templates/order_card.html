@@ -25,16 +25,24 @@
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center">
     <div>
-        {# Tambahkan tombol 'Bayar' HANYA jika statusnya 'menunggu_pembayaran' #}
+        {# Tombol-tombol aksi utama #}
         {% if order.status == 'menunggu_pembayaran' %}
-            <a href="{{ url_for('pembayaran', transaksi_id=order.id_transaksi) }}" class="btn btn-success">
+            <a href="{{ url_for('pembayaran', transaksi_id=order.id_transaksi) }}" class="btn btn-success btn-sm">
                 Bayar Sekarang
             </a>
-        {% endif %}
-        {% if order.status == 'dikirim' %}
-            <form action="{{ url_for('terima_pesanan', transaksi_id=order.id_transaksi) }}" method="POST">
-                <button type="submit" class="btn btn-info">Konfirmasi Terima Pesanan</button>
+        {% elif order.status == 'dikirim' %}
+            <form action="{{ url_for('terima_pesanan', transaksi_id=order.id_transaksi) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-info btn-sm">Konfirmasi Terima Pesanan</button>
             </form>
+        {% elif order.status == 'selesai' %}
+            <a href="{{ url_for('beri_rating', transaksi_id=order.id_transaksi) }}" class="btn btn-warning btn-sm">Beri Ulasan</a>
+        {% endif %}
+
+        {# Tombol Laporkan Masalah, selalu ada untuk pesanan yang aktif #}
+        {% if order.status not in ['dibatalkan', 'dibatalkan_sistem'] %}
+            <a href="{{ url_for('kirim_pengaduan', id_transaksi=order.id_transaksi) }}" class="btn btn-outline-danger btn-sm">
+                Laporkan Masalah
+            </a>
         {% endif %}
     </div>
     <div class="text-end">

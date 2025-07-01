@@ -12,29 +12,34 @@
 
                 <div class="form-group mb-3">
                     <label for="nama_toko" class="font-weight-bold">Nama Toko</label>
-                    <input type="text" name="nama_toko" id="nama_toko" class="form-control" value="{{ toko.nama_toko }}">
+                    <input type="text" name="nama_toko" id="nama_toko" class="form-control"
+                        value="{{ toko.nama_toko }}">
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="no_hp_toko" class="font-weight-bold">Nomor HP Penjual</label>
-                    <input type="tel" name="no_hp_toko" id="no_hp_toko" class="form-control" value="{{ toko.no_hp_toko }}">
+                    <input type="tel" name="no_hp_toko" id="no_hp_toko" class="form-control"
+                        value="{{ toko.no_hp_toko }}">
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="alamat_toko" class="font-weight-bold">Alamat Toko</label>
-                    <textarea name="alamat_toko" id="alamat_toko" class="form-control" rows="4">{{ toko.alamat_toko }}</textarea>
+                    <textarea name="alamat_toko" id="alamat_toko" class="form-control"
+                        rows="4">{{ toko.alamat_toko }}</textarea>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="deskripsi_toko" class="font-weight-bold">Deskripsi Singkat Toko</label>
-                    <textarea name="deskripsi_toko" id="deskripsi_toko" class="form-control" rows="4">{{ toko.deskripsi_toko }}</textarea>
+                    <textarea name="deskripsi_toko" id="deskripsi_toko" class="form-control"
+                        rows="4">{{ toko.deskripsi_toko }}</textarea>
                 </div>
 
                 <div class="form-group mb-3">
                     <label class="font-weight-bold">Foto Toko / Logo Saat Ini</label>
                     <div>
-                        <img src="{{ url_for('static', filename='uploads/' + toko.foto_toko if toko.foto_toko else 'images/default_shop.png') }}" 
-                             alt="Logo Toko" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover; margin-bottom: 10px;">
+                        <img src="{{ url_for('static', filename='uploads/' + toko.foto_toko if toko.foto_toko else 'images/default_shop.png') }}"
+                            alt="Logo Toko" class="img-thumbnail"
+                            style="width: 100px; height: 100px; object-fit: cover; margin-bottom: 10px;">
                     </div>
                     <label for="foto_toko">Ganti Foto (Opsional)</label>
                     <input type="file" name="foto_toko" id="foto_toko" class="form-control-file">
@@ -43,48 +48,70 @@
 
                 <div class="form-group mb-3">
                     <label class="font-weight-bold">Banner Toko Saat Ini</label>
-                <div>
-                    {% if toko.banner_toko %}
-                        <img src="{{ url_for('static', filename='uploads/' + toko.banner_toko) }}" alt="Banner Toko" class="img-fluid img-thumbnail">
-                    {% else %}
+                    <div>
+                        {% if toko.banner_toko %}
+                        <img src="{{ url_for('static', filename='uploads/' + toko.banner_toko) }}" alt="Banner Toko"
+                            class="img-fluid img-thumbnail">
+                        {% else %}
                         <p class="text-muted">Belum ada banner.</p>
-                    {% endif %}
-                </div>
-                    <label for="banner_toko" class="mt-2">Ganti Banner (Opsional, rekomendasi ukuran 1200x400 pixel)</label>
+                        {% endif %}
+                    </div>
+                    <label for="banner_toko" class="mt-2">Ganti Banner (Opsional, rekomendasi ukuran 1200x400
+                        pixel)</label>
                     <input type="file" name="banner_toko" id="banner_toko" class="form-control-file">
                 </div>
                 <hr>
 
                 <div class="form-group mb-3">
                     <label class="font-weight-bold">Metode Pembayaran</label>
-                    <div>
-                        <input type="checkbox" name="pembayaran" value="Transfer Bank" id="cb-bank" {% if 'Transfer Bank' in toko.list_pembayaran %}checked{% endif %}> <label for="cb-bank">Transfer Bank</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" name="pembayaran" value="COD" id="cb-cod" {% if 'COD' in toko.list_pembayaran %}checked{% endif %}> <label for="cb-cod">COD</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" name="pembayaran" value="OVO" id="cb-ovo" {% if 'OVO' in toko.list_pembayaran %}checked{% endif %}> <label for="cb-ovo">OVO</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" name="pembayaran" value="GoPay" id="cb-gopay" {% if 'GoPay' in toko.list_pembayaran %}checked{% endif %}> <label for="cb-gopay">GoPay</label>
+                    <div class="checkbox-group-container">
+                        <label class="custom-checkbox">Transfer Bank
+                            <input type="checkbox" name="pembayaran" value="Transfer Bank" {% if 'Transfer Bank' in
+                                toko.list_pembayaran %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">COD
+                            <input type="checkbox" name="pembayaran" value="COD" {% if 'COD' in toko.list_pembayaran
+                                %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">OVO
+                            <input type="checkbox" name="pembayaran" value="OVO" {% if 'OVO' in toko.list_pembayaran
+                                %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">GoPay
+                            <input type="checkbox" name="pembayaran" value="GoPay" {% if 'GoPay' in toko.list_pembayaran
+                                %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
                     </div>
                 </div>
                 <hr>
 
                 <div class="form-group mb-3">
                     <label class="font-weight-bold">Opsi Pengiriman</label>
-                    <div>
-                        <input type="checkbox" name="pengiriman" value="JNE" id="cb-jne" {% if 'JNE' in toko.list_pengiriman %}checked{% endif %}> <label for="cb-jne">JNE</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" name="pengiriman" value="J&T" id="cb-jnt" {% if 'J&T' in toko.list_pengiriman %}checked{% endif %}> <label for="cb-jnt">J&T</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" name="pengiriman" value="SiCepat" id="cb-sicepat" {% if 'SiCepat' in toko.list_pengiriman %}checked{% endif %}> <label for="cb-sicepat">SiCepat</label>
-                    </div>
-                     <div>
-                        <input type="checkbox" name="pengiriman" value="GoSend" id="cb-gosend" {% if 'GoSend' in toko.list_pengiriman %}checked{% endif %}> <label for="cb-gosend">GoSend / GrabExpress</label>
+                    <div class="checkbox-group-container">
+                        <label class="custom-checkbox">JNE
+                            <input type="checkbox" name="pengiriman" value="JNE" {% if 'JNE' in toko.list_pengiriman
+                                %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">J&T
+                            <input type="checkbox" name="pengiriman" value="J&T" {% if 'J&T' in toko.list_pengiriman
+                                %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">SiCepat
+                            <input type="checkbox" name="pengiriman" value="SiCepat" {% if 'SiCepat' in
+                                toko.list_pengiriman %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="custom-checkbox">GoSend / GrabExpress
+                            <input type="checkbox" name="pengiriman" value="GoSend" {% if 'GoSend' in
+                                toko.list_pengiriman %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                        </label>
                     </div>
                 </div>
 

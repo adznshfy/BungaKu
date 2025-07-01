@@ -1,0 +1,56 @@
+{% extends "layout.html" %} {% block title %}Kirim Pengaduan{% endblock %} {%
+block content %}
+<div class="container my-5" style="max-width: 700px">
+  <div class="card shadow-lg">
+    <div class="card-header bg-danger text-white">
+      <h3>Formulir Pengaduan</h3>
+    </div>
+    <div class="card-body p-4">
+      <p class="text-muted">
+        Jika Anda memiliki keluhan atau masalah terkait transaksi, produk, atau
+        layanan, silakan sampaikan melalui formulir di bawah ini.
+      </p>
+      <hr />
+      <form action="{{ url_for('kirim_pengaduan') }}" method="POST">
+        {% if id_transaksi %}
+        <div class="alert alert-info">
+          Anda melaporkan masalah untuk Pesanan #{{ id_transaksi }}.
+        </div>
+        <input type="hidden" name="id_transaksi" value="{{ id_transaksi }}" />
+        {% endif %}
+        <div class="mb-3">
+          <label for="subjek" class="form-label fw-bold"
+            >Subjek Pengaduan</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="subjek"
+            name="subjek"
+            placeholder="Contoh: Pesanan tidak sesuai"
+            required
+          />
+        </div>
+        <div class="mb-4">
+          <label for="isi_pengaduan" class="form-label fw-bold"
+            >Jelaskan Masalah Anda Secara Detail</label
+          >
+          <textarea
+            class="form-control"
+            id="isi_pengaduan"
+            name="isi_pengaduan"
+            rows="6"
+            placeholder="Sertakan detail seperti nomor pesanan (jika ada), nama produk, dan kronologi masalah agar kami bisa membantu lebih cepat."
+            required
+          ></textarea>
+        </div>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-danger btn-lg">
+            Kirim Pengaduan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

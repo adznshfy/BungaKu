@@ -1,110 +1,153 @@
-{% extends "layout.html" %}
-{% block title %}Dashboard Penjual{% endblock %}
-
-{% block content %}
+{% extends "layout.html" %} {% block title %}Dashboard Penjual{% endblock %} {%
+block content %}
 <div class="container">
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Profil Toko Anda</h3>
-        </div>
-        <div class="card-body d-flex align-items-center">
-            <div style="flex-shrink: 0;">
-                <img src="{{ url_for('static', filename='uploads/' + toko.foto_toko if toko.foto_toko else 'images/default_shop.png') }}" 
-                     alt="Logo Toko" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
-            </div>
-            <div style="flex-grow: 1; margin-left: 20px;">
-                <h4>{{ toko.nama_toko }}</h4>
-                <p class="text-muted">@{{ toko.username_toko }}</p>
-                <p>{{ toko.deskripsi_toko }}</p>
-                <a href="{{ url_for('edit_toko') }}" class="btn btn-secondary">Edit Profil Toko</a>
-            </div>
-        </div>
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>Profil Toko Anda</h3>
     </div>
+    <div class="card-body d-flex align-items-center">
+      <div style="flex-shrink: 0">
+        <img
+          src="{{ url_for('static', filename='uploads/' + toko.foto_toko if toko.foto_toko else 'images/default_shop.png') }}"
+          alt="Logo Toko"
+          class="img-thumbnail"
+          style="
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+          "
+        />
+      </div>
+      <div style="flex-grow: 1; margin-left: 20px">
+        <h4>{{ toko.nama_toko }}</h4>
+        <p class="text-muted">@{{ toko.username_toko }}</p>
+        <p>{{ toko.deskripsi_toko }}</p>
+        <a href="{{ url_for('edit_toko') }}" class="btn btn-secondary"
+          >Edit Profil Toko</a
+        >
+      </div>
+    </div>
+  </div>
 
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Manajemen Produk</h3>
-            <a href="{{ url_for('add_product') }}" class="btn btn-success">+ Tambah Produk Baru</a>
-        </div>
-        <div class="card-body">
-            <table class="table table-hover">
-    <thead>
-        <tr>
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3>Manajemen Produk</h3>
+      <a href="{{ url_for('add_product') }}" class="btn btn-success"
+        >+ Tambah Produk Baru</a
+      >
+    </div>
+    <div class="card-body">
+      <table class="table table-hover">
+        <thead>
+          <tr>
             <th>Produk</th>
             <th>Harga Mulai Dari</th>
             <th>Total Stok</th>
             <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% if produk %}
-            {% for p in produk %}
-            <tr>
-                <td class="d-flex align-items-center">
-                    <img src="{{ url_for('static', filename='uploads/' + p.main_image if p.main_image else 'images/default_product.png') }}" alt="{{ p.name }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px;">
-                    <span>{{ p.name }}</span>
-                </td>
-                <td>
-                    {% if p.min_price is not none %}
-                        Rp {{ "{:,.0f}".format(p.min_price) }}
-                    {% else %}
-                        <span class="text-muted">N/A</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if p.total_stock is not none %}
-                        {{ p.total_stock }}
-                    {% else %}
-                        <span class="text-muted">0</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{{ url_for('edit_product', product_id=p.id) }}" class="btn btn-warning btn-sm">Edit</a>
-                    <form action="{{ url_for('delete_product', product_id=p.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin hapus produk ini?');">
-                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="4" class="text-center">Anda belum memiliki produk.</td>
-            </tr>
-        {% endif %}
-    </tbody>
-</table>
-        </div>
+          </tr>
+        </thead>
+        <tbody>
+          {% if produk %} {% for p in produk %}
+          <tr>
+            <td class="d-flex align-items-center">
+              <img
+                src="{{ url_for('static', filename='uploads/' + p.main_image if p.main_image else 'images/default_product.png') }}"
+                alt="{{ p.name }}"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  object-fit: cover;
+                  margin-right: 15px;
+                "
+              />
+              <span>{{ p.name }}</span>
+            </td>
+            <td>
+              {% if p.min_price is not none %} Rp {{
+              "{:,.0f}".format(p.min_price) }} {% else %}
+              <span class="text-muted">N/A</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.total_stock is not none %} {{ p.total_stock }} {% else %}
+              <span class="text-muted">0</span>
+              {% endif %}
+            </td>
+            <td>
+              <a
+                href="{{ url_for('edit_product', product_id=p.id) }}"
+                class="btn btn-warning btn-sm"
+                >Edit</a
+              >
+              <form
+                action="{{ url_for('delete_product', product_id=p.id) }}"
+                method="POST"
+                style="display: inline"
+                onsubmit="return confirm('Yakin hapus produk ini?');"
+              >
+                <button type="submit" class="btn btn-danger btn-sm">
+                  Hapus
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="4" class="text-center">Anda belum memiliki produk.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 <div class="card mt-4">
-    <div class="card-header">
-        <h3>Pesanan Perlu Diproses</h3>
+  <div class="card-header">
+    <h3>Pesanan Perlu Diproses</h3>
+  </div>
+  <div class="card-body">
+    {% if pesanan_masuk %} {% for pesanan in pesanan_masuk %}
+    <div class="border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between">
+        <div>
+          <strong>Pesanan #{{ pesanan.id_transaksi }}</strong>
+          <br />
+          <small
+            >Dipesan oleh: {{ pesanan.nama_pembeli }} pada {{
+            pesanan.tanggal_pesanan.strftime('%d %b %Y') }}</small
+          >
+        </div>
+        <form
+          action="{{ url_for('proses_pesanan', transaksi_id=pesanan.id_transaksi) }}"
+          method="POST"
+          class="d-flex flex-column align-items-start"
+        >
+          <div class="input-group input-group-sm mb-2" style="max-width: 300px">
+            <span class="input-group-text">Resi:</span>
+            <input
+              type="text"
+              name="nomor_resi"
+              class="form-control"
+              placeholder="Masukkan nomor resi"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-success btn-sm">
+            Tandai sebagai 'Dikirim'
+          </button>
+        </form>
+      </div>
+      <hr />
+      <ul>
+        {% for item in pesanan.detail_items %}
+        <li>{{ item.kuantitas }}x {{ item.product_name }}</li>
+        {% endfor %}
+      </ul>
     </div>
-    <div class="card-body">
-        {% if pesanan_masuk %}
-            {% for pesanan in pesanan_masuk %}
-            <div class="border rounded p-3 mb-3">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <strong>Pesanan #{{ pesanan.id_transaksi }}</strong>
-                        <br>
-                        <small>Dipesan oleh: {{ pesanan.nama_pembeli }} pada {{ pesanan.tanggal_pesanan.strftime('%d %b %Y') }}</small>
-                    </div>
-                    <form action="{{ url_for('proses_pesanan', transaksi_id=pesanan.id_transaksi) }}" method="POST">
-                        <button type="submit" class="btn btn-primary">Proses & Kirim Pesanan</button>
-                    </form>
-                </div>
-                <hr>
-                <ul>
-                    {% for item in pesanan.detail_items %}
-                        <li>{{ item.kuantitas }}x {{ item.product_name }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="text-muted">Tidak ada pesanan yang perlu diproses saat ini.</p>
-        {% endif %}
-    </div>
+    {% endfor %} {% else %}
+    <p class="text-muted">Tidak ada pesanan yang perlu diproses saat ini.</p>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

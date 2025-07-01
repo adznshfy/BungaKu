@@ -1,72 +1,113 @@
-{% extends "layout.html" %}
-{% block title %}Pembayaran{% endblock %}
-
-{% block content %}
-<div class="container" style="max-width: 600px; margin: auto; padding-top: 2rem;">
-    <div class="card text-center shadow-sm">
-        <div class="card-header">
-            <h4>Selesaikan Pembayaran</h4>
-        </div>
-        <div class="card-body">
-            <p class="text-muted">Total Tagihan Pesanan #{{ transaksi.id_transaksi }}</p>
-            <h2 class="card-title text-primary">Rp {{ "{:,.0f}".format(transaksi.total_harga) }}</h2>
-            
-            <div class="alert alert-warning mt-3">
-                <p class="fw-bold mb-1">Selesaikan pembayaran sebelum:</p>
-                <h4 id="countdown" class="text-danger fw-bold"></h4>
-            </div>
-
-            <div class="card my-4 text-start">
-                <div class="card-body">
-                    <h5 class="card-title">Petunjuk Pembayaran</h5>
-                    <p>Bayar dengan: <strong>{{ transaksi.metode_pembayaran or 'Metode belum dipilih' }}</strong></p>
-                    {% if 'Transfer' in transaksi.metode_pembayaran %}
-                    <p>Silakan transfer ke nomor Virtual Account di bawah ini:</p>
-                    <h4 class="text-center bg-light p-2 rounded">8808 1234 5678 9012</h4>
-                    <small class="text-muted"> (Contoh ini menggunakan nomor VA statis. Sistem nyata akan meng-generate nomor unik.)</small>
-                    {% elif 'OVO' in transaksi.metode_pembayaran or 'GoPay' in transaksi.metode_pembayaran %}
-                    <p>Buka aplikasi {{ transaksi.metode_pembayaran }} Anda dan bayar menggunakan nomor di bawah ini:</p>
-                    <h4 class="text-center bg-light p-2 rounded">0812 3456 7890</h4>
-                    {% endif %}
-                </div>
-            </div>
-
-            <p class="fw-bold">Setelah melakukan pembayaran, konfirmasi dengan memasukkan PIN Anda.</p>
-            <form action="{{ url_for('proses_pembayaran', transaksi_id=transaksi.id_transaksi) }}" method="POST">
-                <div class="mb-3">
-                    <label for="pin" class="form-label">Masukkan 6 Digit PIN Keamanan</label>
-                    <input type="password" name="pin" id="pin" class="form-control form-control-lg" style="text-align: center; font-size: 1.5rem; letter-spacing: 1rem;" maxlength="6" required autocomplete="off" autofocus>
-                </div>
-                <button type="submit" class="btn btn-success btn-lg mt-2 w-100">Saya Sudah Bayar</button>
-            </form>
-        </div>
+{% extends "layout.html" %} {% block title %}Pembayaran{% endblock %} {% block
+content %}
+<div
+  class="container"
+  style="max-width: 600px; margin: auto; padding-top: 2rem"
+>
+  <div class="card text-center shadow-sm">
+    <div class="card-header">
+      <h4>Selesaikan Pembayaran</h4>
     </div>
+    <div class="card-body">
+      <p class="text-muted">
+        Total Tagihan Pesanan #{{ transaksi.id_transaksi }}
+      </p>
+      <h2 class="card-title text-primary">
+        Rp {{ "{:,.0f}".format(transaksi.total_harga) }}
+      </h2>
+
+      <div class="alert alert-warning mt-3">
+        <p class="fw-bold mb-1">Selesaikan pembayaran sebelum:</p>
+        <h4 id="countdown" class="text-danger fw-bold"></h4>
+      </div>
+
+      <div class="card my-4 text-start">
+        <div class="card-body">
+          <h5 class="card-title">Petunjuk Pembayaran</h5>
+          <p>
+            Bayar dengan:
+            <strong
+              >{{ transaksi.metode_pembayaran or 'Metode belum dipilih'
+              }}</strong
+            >
+          </p>
+          {% if transaksi.metode_pembayaran and "transfer" in
+          transaksi.metode_pembayaran %}
+          <p>Silakan transfer ke nomor Virtual Account di bawah ini:</p>
+          <h4 class="text-center bg-light p-2 rounded">8808 1234 5678 9012</h4>
+          <small class="text-muted">
+            (Contoh ini menggunakan nomor VA statis. Sistem nyata akan
+            meng-generate nomor unik.)</small
+          >
+
+          {# Perbaikan ada di sini: tambahkan 'transaksi.metode_pembayaran and'
+          #} {% elif transaksi.metode_pembayaran and ('OVO' in
+          transaksi.metode_pembayaran or 'GoPay' in transaksi.metode_pembayaran)
+          %}
+          <p>
+            Buka aplikasi {{ transaksi.metode_pembayaran }} Anda dan bayar
+            menggunakan nomor di bawah ini:
+          </p>
+          <h4 class="text-center bg-light p-2 rounded">0812 3456 7890</h4>
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="fw-bold">
+        Setelah melakukan pembayaran, konfirmasi dengan memasukkan PIN Anda.
+      </p>
+      <form
+        action="{{ url_for('proses_pembayaran', transaksi_id=transaksi.id_transaksi) }}"
+        method="POST"
+      >
+        <div class="mb-3">
+          <label for="pin" class="form-label"
+            >Masukkan 6 Digit PIN Keamanan</label
+          >
+          <input
+            type="password"
+            name="pin"
+            id="pin"
+            class="form-control form-control-lg"
+            style="text-align: center; font-size: 1.5rem; letter-spacing: 1rem"
+            maxlength="6"
+            required
+            autocomplete="off"
+            autofocus
+          />
+        </div>
+        <button type="submit" class="btn btn-success btn-lg mt-2 w-100">
+          Saya Sudah Bayar
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Script untuk countdown timer
-    const expiryTimestamp = {{ transaksi.expiry_unix }} * 1000;
-    const countdownEl = document.getElementById('countdown');
+  document.addEventListener('DOMContentLoaded', function() {
+      // Script untuk countdown timer
+      const expiryTimestamp = {{ transaksi.expiry_unix }} * 1000;
+      const countdownEl = document.getElementById('countdown');
 
-    const timer = setInterval(function() {
-        const now = new Date().getTime();
-        const distance = expiryTimestamp - now;
+      const timer = setInterval(function() {
+          const now = new Date().getTime();
+          const distance = expiryTimestamp - now;
 
-        if (distance < 0) {
-            clearInterval(timer);
-            countdownEl.innerHTML = "WAKTU PEMBAYARAN HABIS";
-            // Anda bisa tambahkan logika untuk menonaktifkan tombol di sini
-            document.querySelector('button[type="submit"]').disabled = true;
-            return;
-        }
+          if (distance < 0) {
+              clearInterval(timer);
+              countdownEl.innerHTML = "WAKTU PEMBAYARAN HABIS";
+              // Anda bisa tambahkan logika untuk menonaktifkan tombol di sini
+              document.querySelector('button[type="submit"]').disabled = true;
+              return;
+          }
 
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        countdownEl.innerHTML = `${hours} jam : ${minutes} menit : ${seconds} detik`;
-    }, 1000);
-});
+          countdownEl.innerHTML = `${hours} jam : ${minutes} menit : ${seconds} detik`;
+      }, 1000);
+  });
 </script>
 {% endblock %}

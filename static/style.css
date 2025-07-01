@@ -116,6 +116,24 @@ body.dark-mode .search-bar {
   margin-bottom: 30px;
 }
 
+.btn-login {
+  display: inline-block;
+  padding: 12px 36px;
+  background-color: #6c5ce7;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+}
+
 .btn-primary {
   display: inline-block;
   padding: 12px 36px;
@@ -127,6 +145,44 @@ body.dark-mode .search-bar {
   border-radius: 10px;
   cursor: pointer;
   transition: transform .15s, box-shadow .15s;
+}
+
+.btn-welcome-btn-primary{
+  display: inline-block;
+  padding: 12px 36px;
+  background-color: #6c5ce7;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  text-decoration: none;
+}
+
+.btn-welcome-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+}
+
+.btn-welcome-btn-secondary {
+  display: inline-block;
+  padding: 12px 36px;
+  background-color: #6c5ce7;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  text-decoration: none;
+}
+
+.btn-welcome-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,.15);
 }
 
 .btn-primary:hover {
@@ -251,35 +307,52 @@ form button:hover {
 
 .nav-links {
   position: fixed;
-  top: 60px; /* sesuaikan dengan tinggi navbar */
-  left: -250px;
-  width: 200px;
-  background-color: #7c6ee5;
-  padding: 20px 0;
-  transition: left 0.3s ease;
+  top: 0;
+  left: -260px;
+  width: 250px;
+  height: 100vh;
+  
+  /* PADDING YANG SUDAH DIPERBAIKI: */
+  /* Atas: 80px, Kanan & Kiri: 25px, Bawah: 20px */
+  padding: 70px 0px 0px 0px;
+  
+  background-color: #6c5ce7;
+  z-index: 1000;
+  transition: left 0.35s ease-in-out;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  z-index: 1000;
-  height: 100vh;
-  color: white;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  gap: 10px;
 }
 
+/* Aturan saat menu aktif (terlihat) */
 .nav-links.active {
-  left: 0;
+  left: 0; /* Pindahkan ke dalam layar agar terlihat */
 }
 
+/* Aturan untuk setiap link di dalam menu */
 .nav-links a {
   color: white;
-  padding: 10px 20px;
+  padding: 12px 25px;
   text-decoration: none;
   font-weight: 500;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
 }
 
+/* Efek hover pada link */
 .nav-links a:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-links .close-btn {
+  position: absolute;
+  top: 15px;
+  right: 85px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
 }
 
 .profile-menu {
@@ -333,18 +406,38 @@ body.dark-mode .dropdown-menu a {
 }
 
 footer.site-footer {
+  /* 1. Atur posisi agar menempel di bawah layar */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  
+  /* 2. Sembunyikan footer di luar layar secara default */
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+  
+  /* Gaya asli Anda (sedikit disesuaikan) */
   background: #f5f6fa;
   text-align: center;
   padding: 20px 10px;
-  margin-top: auto;
   border-top: 1px solid #ddd;
+  box-sizing: border-box; /* Tambahkan ini untuk konsistensi layout */
+  z-index: 999; /* Pastikan footer tidak tertutup elemen lain */
 }
 
+/* 3. Buat kelas baru untuk menampilkan footer */
+footer.site-footer.visible {
+  transform: translateY(0);
+}
+
+
+/* Gaya untuk dark-mode (ini bisa tetap sama) */
 body.dark-mode footer.site-footer {
   background: #1e1e2f;
   border-top: 1px solid #444;
 }
 
+/* Bagian .footer-content dan lainnya biarkan seperti semula */
 .footer-content {
   font-size: 14px;
   color: #444;
@@ -653,3 +746,84 @@ html, body, .navbar, .brand, .nav-links a, .profile-dropdown {
 /* Garis penghubung */
 .step:not(:last-child)::before { content: ''; background: #ddd; height: 3px; width: calc(100% - 40px); position: absolute; top: 18px; left: calc(50% + 20px); }
 .step.active:not(:last-child)::before { background: #28a745; }
+
+/* ===== STYLE UNTUK CHECKBOX CUSTOM ===== */
+
+/* 1. Container untuk menata checkbox secara horizontal */
+.checkbox-group-container {
+  display: flex; /* Aktifkan flexbox */
+  flex-wrap: wrap; /* Izinkan item pindah ke baris baru jika tidak muat */
+  gap: 15px; /* Jarak antar checkbox */
+  margin-top: 10px;
+}
+
+/* 2. Wrapper untuk setiap checkbox (label utama) */
+.custom-checkbox {
+  display: block;
+  position: relative;
+  padding-left: 35px; /* Ruang untuk checkbox custom */
+  cursor: pointer;
+  font-size: 16px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 3. Sembunyikan checkbox asli dari browser */
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* 4. Buat kotak checkbox palsu (checkmark) */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 24px;
+  width: 24px;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+/* 5. Ubah warna latar saat mouse di atasnya */
+.custom-checkbox:hover input ~ .checkmark {
+  background-color: #ddd;
+}
+
+/* 6. Ubah warna latar saat checkbox dicentang */
+.custom-checkbox input:checked ~ .checkmark {
+  background-color: #6c5ce7; /* Warna ungu dari tema Anda */
+  border-color: #6c5ce7;
+}
+
+/* 7. Buat simbol centang di dalam kotak (awalnya tersembunyi) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* 8. Tampilkan simbol centang saat checkbox dicentang */
+.custom-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* 9. Gaya untuk simbol centang (bentuk huruf L) */
+.custom-checkbox .checkmark:after {
+  left: 8px;
+  top: 4px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
