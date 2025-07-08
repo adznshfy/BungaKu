@@ -1,0 +1,34 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Tambah Pengguna Baru{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 700px; margin-top: 20px;">
+    <h2>Tambah Pengguna Baru</h2>
+    <form method="POST" action="{{ url_for('admin_add_user') }}">
+        <div class="mb-3">
+            <label for="nama">Nama Lengkap</label>
+            <input type="text" id="nama" name="nama" required>
+        </div>
+        <div class="mb-3">
+            <label for="email">Alamat Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="mb-3">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="mb-3">
+            <label for="id_level">Peran (Level)</label>
+            <select id="id_level" name="id_level" required>
+                <option value="">-- Pilih Peran --</option>
+                {% for level in levels %}
+                <option value="{{ level.id_level }}">{{ level.level_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit">Simpan Pengguna</button>
+        <a href="{{ url_for('admin_users') }}" class="btn-primary" style="background-color: #6c757d; text-decoration:none; text-align:center; margin-top: 10px;">Batal</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1 style="font-weight: 600; margin-bottom: 2rem;">Dashboard</h1>
+<div class="stat-card-grid">
+    
+    <div class="stat-card">
+        <div class="info">
+            <h5>Total Pengguna</h5>
+            <p>{{ user_count }}</p>
+        </div>
+        <div class="icon"><i class="fas fa-users"></i></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="info">
+            <h5>Total Produk</h5>
+            <p>{{ product_count }}</p>
+        </div>
+        <div class="icon"><i class="fas fa-box"></i></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="info">
+            <h5>Pesanan Selesai</h5>
+            <p>{{ order_count }}</p>
+        </div>
+        <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="info">
+            <h5>Total Pendapatan</h5>
+            <p>Rp {{ "{:,.0f}".format(total_revenue).replace(",", ".") }}</p>
+        </div>
+        <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+    </div>
+
+</div>
+{% endblock %}

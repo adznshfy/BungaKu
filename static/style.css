@@ -11,8 +11,10 @@ body {
   background: linear-gradient(135deg, #f5f6fa, #e0eafc);
   background-attachment: fixed;
   color: #2d3436;
-  min-height: 100vh;
+  min-height: 100vh; /* Pastikan body memiliki tinggi minimal 100% dari viewport */
   transition: background 0.4s ease, color 0.4s ease;
+  display: flex; /* Gunakan flexbox */
+  flex-direction: column; /* Atur item (main, footer) secara vertikal */
 }
 
 body.dark-mode {
@@ -403,32 +405,26 @@ body.dark-mode .dropdown-menu a {
   max-width: 100%;
   background: transparent;
   box-shadow: none;
+  flex: 1; /* Izinkan container untuk tumbuh dan mengisi ruang yang tersedia */
 }
 
 footer.site-footer {
-  /* 1. Atur posisi agar menempel di bawah layar */
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  
-  /* 2. Sembunyikan footer di luar layar secara default */
-  transform: translateY(100%);
-  transition: transform 0.3s ease-in-out;
-  
+  /* Hapus semua properti yang berhubungan dengan 'position' dan 'transform' */
+  /* position: ; -> Hapus */
+  /* bottom: 0; -> Hapus */
+  /* transform: translateY(100%); -> Hapus */
+
   /* Gaya asli Anda (sedikit disesuaikan) */
   background: #f5f6fa;
   text-align: center;
   padding: 20px 10px;
   border-top: 1px solid #ddd;
-  box-sizing: border-box; /* Tambahkan ini untuk konsistensi layout */
-  z-index: 999; /* Pastikan footer tidak tertutup elemen lain */
+  box-sizing: border-box; 
+  width: 100%;
+  margin-top: auto; /* Ini kunci utamanya, akan mendorong footer ke bawah */
 }
 
 /* 3. Buat kelas baru untuk menampilkan footer */
-footer.site-footer.visible {
-  transform: translateY(0);
-}
 
 
 /* Gaya untuk dark-mode (ini bisa tetap sama) */

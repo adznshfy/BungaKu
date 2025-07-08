@@ -1,0 +1,36 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Edit Pengguna{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 700px; margin-top: 20px;">
+    <h2>Edit Pengguna: {{ user.nama }}</h2>
+    <form method="POST" action="{{ url_for('admin_edit_user', user_id=user.id_user) }}">
+        <input type="hidden" name="id_profile" value="{{ user.id_profile }}">
+        <div class="mb-3">
+            <label for="nama">Nama Lengkap</label>
+            <input type="text" id="nama" name="nama" value="{{ user.nama }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="email">Alamat Email</label>
+            <input type="email" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="id_level">Peran (Level)</label>
+            <select id="id_level" name="id_level" required>
+                {% for level in levels %}
+                <option value="{{ level.id_level }}" {% if level.id_level == user.id_level %}selected{% endif %}>
+                    {{ level.level_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+         <div class="mb-3">
+            <label for="new_password">Password Baru (Opsional)</label>
+            <input type="password" id="new_password" name="new_password" placeholder="Kosongkan jika tidak ingin diubah">
+        </div>
+        <button type="submit">Update Pengguna</button>
+        <a href="{{ url_for('admin_users') }}" class="btn-primary" style="background-color: #6c757d; text-decoration:none; text-align:center; margin-top: 10px;">Batal</a>
+    </form>
+</div>
+{% endblock %}

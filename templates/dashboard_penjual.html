@@ -44,6 +44,7 @@ block content %}
             <th>Produk</th>
             <th>Harga Mulai Dari</th>
             <th>Total Stok</th>
+            <th>Status</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -72,6 +73,13 @@ block content %}
             <td>
               {% if p.total_stock is not none %} {{ p.total_stock }} {% else %}
               <span class="text-muted">0</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.is_active %}
+                  <span class="badge bg-success">Aktif</span>
+              {% else %}
+                  <span class="badge bg-danger">Tidak Aktif</span>
               {% endif %}
             </td>
             <td>

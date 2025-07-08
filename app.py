@@ -8,11 +8,15 @@ import bcrypt
 from dotenv import load_dotenv
 import email_verification
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 from datetime import datetime
 import pandas as pd
 from flask import Response
 import io
-from admin import admin_bp
+from io import StringIO, BytesIO
+from functools import wraps
+import csv
+from weasyprint import HTML
 
 load_dotenv()
 
@@ -35,11 +39,9 @@ email_verification.mail.init_app(app)
 
 
 email_verification.mysql = mysql
-app.register_blueprint(admin_bp)
 
 app.secret_key = "017#!NaswaJia)!!"
 app.register_blueprint(email_verification.email_bp)
-
 
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Maksimum 2MB
@@ -54,6 +56,15 @@ def allowed_file(filename):
 def too_large(e):
     flash("File terlalu besar. Maksimum 2MB.", "error")
     return redirect(request.url)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'id_user' not in session or session.get('id_level') != 1:
+            flash('Anda harus login sebagai Admin untuk mengakses halaman ini.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/welcome')
 def welcome():
@@ -128,7 +139,7 @@ def login():
             
             id_level = user['id_level']
             if id_level == 1: # Admin
-                return redirect(url_for('management_bp.dashboard_admin'))
+                return redirect(url_for('admin_dashboard'))
             elif id_level == 2: # Pengelola
                 return redirect(url_for('dashboard_pengelola'))
             elif id_level == 5: # Pemimpin
@@ -348,15 +359,15 @@ def home_buyer():
     # --- PENJAGA BARU ---
     # Hanya pembeli (4) dan penjual (3) yang boleh masuk
     if 'id_user' not in session or session.get('id_level') not in [3, 4]:
-        flash("Halaman ini tidak tersedia untuk peran Anda.", "error")
 
         # Arahkan petinggi ke dashboard mereka masing-masing jika mencoba akses
         id_level = session.get('id_level')
-        if id_level == 1: return redirect(url_for('dashboard_admin'))
+        if id_level == 1: return redirect(url_for('admin_dashboard'))
         if id_level == 2: return redirect(url_for('dashboard_pengelola'))
         if id_level == 5: return redirect(url_for('dashboard_pimpinan'))
 
         # Jika tidak ada sesi, arahkan ke login
+        flash("Halaman ini tidak tersedia untuk peran Anda.", "error")
         return redirect(url_for('login'))
     # --- AKHIR PENJAGA ---
 
@@ -370,6 +381,7 @@ def home_buyer():
         FROM products p
         JOIN users u ON p.id_user = u.id_user
         JOIN toko t ON u.id_user = t.id_user
+        WHERE p.is_active = 1
     """)
     produk = cursor.fetchall()
     cursor.close()
@@ -411,11 +423,9 @@ def dashboard_penjual():
     # 2. Ambil Daftar Produk
     cur.execute("""
     SELECT 
-        p.id, p.name,
+        p.id, p.name,p.is_active,
         (SELECT nama_file_gambar FROM product_images WHERE id_produk = p.id ORDER BY id ASC LIMIT 1) as main_image,
-        -- [FIX] Hanya mengambil harga minimal dari varian yang aktif
         (SELECT MIN(harga) FROM product_variations WHERE id_produk = p.id AND is_active = 1) as min_price,
-        -- [FIX] Hanya menjumlahkan stok dari varian yang aktif
         (SELECT SUM(stok) FROM product_variations WHERE id_produk = p.id AND is_active = 1) as total_stock
     FROM products p
     WHERE p.id_user = %s
@@ -598,6 +608,12 @@ def product_detail(product_id):
         flash("Produk tidak ditemukan.", "error")
         cur.close()
         return redirect(url_for('home_buyer'))
+    
+    is_owner = session.get('id_user') == product.get('id_user')
+    if not product['is_active'] and not is_owner:
+        flash("Produk ini sedang tidak tersedia.", "error")
+        cur.close()
+        return redirect(url_for('home_buyer'))
         
     # 2. Ambil gambar & varian
     cur.execute("SELECT * FROM product_images WHERE id_produk = %s", (product_id,))
@@ -640,6 +656,33 @@ def product_detail(product_id):
                            reviews=reviews, 
                            rating_summary=rating_summary,
                            rating_counts=rating_counts)
+
+# Tambahkan route baru ini di app.py
+@app.route('/toggle-product-active/<int:product_id>', methods=['POST'])
+def toggle_product_active_seller(product_id):
+    # Keamanan: pastikan yang akses adalah penjual
+    if session.get('id_level') != 3:
+        flash("Aksi tidak diizinkan.", "error")
+        return redirect(url_for('home_buyer'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor()
+
+    # Keamanan tambahan: pastikan produk ini milik penjual yang sedang login
+    cur.execute("SELECT id FROM products WHERE id = %s AND id_user = %s", (product_id, user_id))
+    product = cur.fetchone()
+
+    if product:
+        # Jika produk ada dan milik user, ubah status is_active
+        cur.execute("UPDATE products SET is_active = NOT is_active WHERE id = %s", (product_id,))
+        mysql.connection.commit()
+        flash("Status produk berhasil diubah.", "success")
+    else:
+        flash("Produk tidak ditemukan atau Anda tidak memiliki izin.", "error")
+
+    cur.close()
+    # Kembali ke dashboard penjual atau halaman edit
+    return redirect(request.referrer or url_for('dashboard_penjual'))
 
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
@@ -1566,13 +1609,196 @@ def simpan_rating(transaksi_id):
     return redirect(url_for('riwayat'))
 
 @app.route('/admin/dashboard')
-def dashboard_admin():
-    # ... (kode di dalam fungsi ini tidak perlu diubah) ...
-    if 'loggedin' not in session or session.get('id_level') != 1:
-        flash('Anda harus login sebagai Admin.', 'warning')
-        return redirect(url_for('management_bp.login_khusus'))
-    return f"<h1>Dashboard Admin untuk {session.get('nama')}</h1>"
+@admin_required
+def admin_dashboard():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    cur.execute("SELECT COUNT(id_user) as user_count FROM users WHERE id_level IN (3, 4)")
+    user_count = cur.fetchone()['user_count']
+
+    cur.execute("SELECT COUNT(id) as product_count FROM products")
+    product_count = cur.fetchone()['product_count']
+
+    cur.execute("SELECT COUNT(id_transaksi) as order_count FROM transaksi WHERE status = 'selesai'")
+    order_count = cur.fetchone()['order_count']
+
+    cur.execute("SELECT SUM(total_harga) AS total_revenue FROM transaksi WHERE status = 'selesai'")
+    revenue_data = cur.fetchone()
+    total_revenue = revenue_data['total_revenue'] if revenue_data and revenue_data['total_revenue'] else 0
+    
+    cur.close()
+
+    return render_template("admin/dashboard_admin.html",
+                           user_count=user_count,
+                           product_count=product_count,
+                           order_count=order_count,
+                           total_revenue=total_revenue)
+    
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT u.id_user, p.nama, u.email, p.no_telp, l.level_name, u.is_active
+        FROM users u
+        JOIN profile p ON u.id_profile = p.id_profile
+        JOIN levels l ON u.id_level = l.id_level
+        ORDER BY u.id_user ASC
+    """)
+    user_list = cur.fetchall()
+    cur.close()
+    return render_template('admin/users.html', users=user_list)
+
+@app.route('/admin/users/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_user():
+    if request.method == 'POST':
+        nama = request.form['nama']
+        email = request.form['email']
+        password = request.form['password']
+        id_level = request.form['id_level']
+        alamat = request.form.get('alamat', '')
+        no_telp = request.form.get('no_telp', '')
+
+        if not all([nama, email, password, id_level]):
+            flash("Nama, Email, Password, dan Peran wajib diisi.", "error")
+            return redirect(url_for('admin_add_user'))
+        
+        hashed_password = generate_password_hash(password)
+        
+        cur = mysql.connection.cursor()
+        try:
+            cur.execute("INSERT INTO profile (nama, alamat, no_telp) VALUES (%s, %s, %s)",
+                       (nama, alamat, no_telp))
+            id_profile_baru = cur.lastrowid
+
+            cur.execute("""
+                INSERT INTO users (email, password, id_level, id_profile)
+                VALUES (%s, %s, %s, %s)
+            """, (email, hashed_password, id_level, id_profile_baru))
+            
+            mysql.connection.commit()
+            flash("Pengguna baru berhasil ditambahkan.", "success")
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f"Gagal menambahkan pengguna: {e}", "error")
+        finally:
+            cur.close()
+        
+        return redirect(url_for('admin_users'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT id_level, level_name FROM levels")
+    levels = cur.fetchall()
+    cur.close()
+    return render_template('admin/add_user.html', levels=levels)
+
+@app.route('/admin/users/edit/<int:user_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_user(user_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    if request.method == 'POST':
+        nama = request.form['nama']
+        email = request.form['email']
+        id_level = request.form['id_level']
+        no_telp = request.form.get('no_telp', '')
+        new_password = request.form.get('new_password')
+        id_profile = request.form['id_profile']
+
+        cur.execute("UPDATE profile SET nama = %s, no_telp = %s WHERE id_profile = %s",
+                   (nama, no_telp, id_profile))
+
+        if new_password:
+            hashed_password = generate_password_hash(new_password)
+            cur.execute("UPDATE users SET email = %s, id_level = %s, password = %s WHERE id_user = %s",
+                       (email, id_level, hashed_password, user_id))
+        else:
+            cur.execute("UPDATE users SET email = %s, id_level = %s WHERE id_user = %s",
+                       (email, id_level, user_id))
+
+        mysql.connection.commit()
+        cur.close()
+        flash("Data pengguna berhasil diperbarui.", "success")
+        return redirect(url_for('admin_users'))
+
+    cur.execute("""
+        SELECT u.id_user, u.email, u.id_level, u.id_profile, p.nama, p.no_telp
+        FROM users u JOIN profile p ON u.id_profile = p.id_profile
+        WHERE u.id_user = %s
+    """, (user_id,))
+    user_data = cur.fetchone()
+    
+    cur.execute("SELECT id_level, level_name FROM levels")
+    levels = cur.fetchall()
+    cur.close()
+    
+    return render_template('admin/edit_user.html', user=user_data, levels=levels)
+
+@app.route('/admin/users/toggle_active/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_toggle_user_active(user_id):
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE users SET is_active = NOT is_active WHERE id_user = %s", (user_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash("Status pengguna berhasil diubah.", "success")
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/products')
+@admin_required
+def admin_products():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT p.id, p.name, p.is_active, t.nama_toko
+        FROM products p
+        JOIN users u ON p.id_user = u.id_user
+        LEFT JOIN toko t ON u.id_user = t.id_user
+        ORDER BY p.id DESC
+    """)
+    product_list = cur.fetchall()
+    cur.close()
+    return render_template('admin/products.html', products=product_list)
+
+@app.route('/admin/products/toggle_active/<int:product_id>', methods=['POST'])
+@admin_required
+def admin_toggle_product_active(product_id):
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE products SET is_active = NOT is_active WHERE id = %s", (product_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash("Status produk berhasil diubah.", "success")
+    return redirect(url_for('admin_products'))
+
+@app.route('/admin/export/users')
+@admin_required
+def admin_export_users():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT u.id_user, p.nama, u.email, p.no_telp, l.level_name, 
+               CASE WHEN u.is_active = 1 THEN 'Aktif' ELSE 'Tidak Aktif' END as status
+        FROM users u
+        JOIN profile p ON u.id_profile = p.id_profile
+        JOIN levels l ON u.id_level = l.id_level
+    """)
+    users = cur.fetchall()
+    cur.close()
+
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    if users:
+        headers = list(users[0].keys())
+        cw.writerow(headers)
+        for user in users:
+            cw.writerow(list(user.values()))
+
+    output = si.getvalue()
+    si.close()
+    
+    response = Response(output, mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=daftar_pengguna.csv"
+    return response
 
 @app.route('/dashboard-pengelola')
 def dashboard_pengelola():
@@ -1763,10 +1989,45 @@ def download_excel():
                     headers={"Content-Disposition": "attachment;filename=laporan_penjualan.xlsx"})
 
 
+# Di dalam app.py
+
 @app.route('/download-pdf')
 def download_pdf():
-    flash("Fitur unduh PDF sedang dalam pengembangan.", "info")
-    return redirect(url_for('dashboard_pimpinan'))
+    # Penjaga keamanan
+    if 'id_user' not in session or session.get('id_level') != 5:
+        flash("Aksi tidak diizinkan.", "error")
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # 1. Ambil data transaksi yang sama seperti di laporan Excel
+    cur.execute("""
+        SELECT id_transaksi, total_harga, metode_pengiriman, metode_pembayaran, tanggal_pesanan
+        FROM transaksi WHERE status = 'selesai'
+    """)
+    data_transaksi = cur.fetchall()
+    
+    # Hitung total pendapatan untuk ditampilkan di footer PDF
+    total_pendapatan = sum(item['total_harga'] for item in data_transaksi)
+    
+    cur.close()
+
+    # Siapkan data untuk dikirim ke template PDF
+    tanggal_sekarang = datetime.now().strftime("%d %B %Y, %H:%M:%S")
+    
+    # 2. Render template HTML yang sudah kita buat tadi menjadi sebuah string
+    html_string = render_template('laporan_pdf.html', 
+                                  data=data_transaksi, 
+                                  total_pendapatan=total_pendapatan,
+                                  tanggal_dibuat=tanggal_sekarang)
+                                  
+    # 3. Buat file PDF dari string HTML tersebut menggunakan WeasyPrint
+    pdf_file = HTML(string=html_string).write_pdf()
+    
+    # 4. Kirim file PDF tersebut sebagai response untuk diunduh oleh browser
+    return Response(pdf_file,
+                    mimetype="application/pdf",
+                    headers={"Content-Disposition": "attachment;filename=laporan_penjualan.pdf"})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -121,8 +121,7 @@
             if (!footer) return;
 
             const toggleFooterVisibility = () => {
-                // Cek jika total tinggi scroll + tinggi layar >= tinggi total halaman
-                const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2; // toleransi 2px
+                const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2;
 
                 if (isAtBottom) {
                     footer.classList.add('visible');
@@ -131,10 +130,7 @@
                 }
             };
 
-            // Jalankan fungsi saat pengguna scroll
             window.addEventListener('scroll', toggleFooterVisibility);
-
-            // Jalankan juga saat halaman pertama kali dimuat (untuk halaman pendek)
             toggleFooterVisibility();
         });
     </script>

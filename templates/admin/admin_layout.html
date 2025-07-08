@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Admin Panel{% endblock %} - BungaKu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* Mengatur agar konten utama tidak tertutup navbar */
+        main.container {
+            padding-top: 80px; /* Sesuaikan dengan tinggi navbar Anda */
+        }
+        
+        /* Gaya untuk tabel data admin */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .admin-table th, .admin-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        .admin-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .admin-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .admin-table .btn-aksi {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-right: 5px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-edit { background-color: #ffc107; }
+        .btn-toggle-on { background-color: #28a745; }
+        .btn-toggle-off { background-color: #dc3545; }
+
+        /* Badge untuk status */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        .badge-success { background-color: #28a745; }
+        .badge-danger { background-color: #dc3545; }
+
+        /* Kartu Statistik di Dashboard */
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-card .info h5 {
+            margin: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+        .stat-card .info p {
+            margin: 5px 0 0 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .stat-card .icon i {
+            font-size: 40px;
+            color: #e9ecef;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <button id="navToggle" class="toggle-button">☰</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="brand" style="text-decoration:none;">
+                <img class="logo" src="{{ url_for('static', filename='images/logo.png') }}">
+                <span>Admin Panel</span>
+            </a>
+        </div>
+        <div class="nav-right">
+            <div class="profile-menu">
+                <img id="profileIcon" src="{{ url_for('static', filename='images/default_profile.png') }}" alt="Profile" class="profile-icon">
+                <div id="profileDropdown" class="dropdown-menu">
+                    <a href="{{ url_for('logout') }}">Keluar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="nav-links" id="navLinks">
+        <h5 style="color:white; padding: 15px 25px 0;">Menu Navigasi</h5>
+        <hr style="color: white; margin: 10px 25px;">
+        <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="{{ url_for('admin_users') }}"><i class="fas fa-users"></i> Manajemen Pengguna</a>
+        <a href="{{ url_for('admin_products') }}"><i class="fas fa-box-open"></i> Manajemen Produk</a>
+        <hr style="color: white; margin: 10px 25px;">
+        <a href="{{ url_for('home_buyer') }}"><i class="fas fa-globe"></i> Kembali ke Situs Utama</a>
+        <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+    </div>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" style="background-color: {% if category == 'success' %}#d4edda{% elif category == 'error' %}#f8d7da{% else %}#cce5ff{% endif %}; color: {% if category == 'success' %}#155724{% elif category == 'error' %}#721c24{% else %}#004085{% endif %}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="site-footer">
+        <div class="footer-content">
+            <strong>BungaKu Admin</strong> — © 2025
+        </div>
+    </footer>
+
+    <script>
+        const navToggle = document.getElementById("navToggle");
+        const navLinks = document.getElementById("navLinks");
+        const profileIcon = document.getElementById("profileIcon");
+        const profileDropdown = document.getElementById("profileDropdown");
+
+        if (navToggle) {
+            navToggle.addEventListener("click", () => {
+                navLinks.classList.toggle("active");
+            });
+        }
+        if (profileIcon) {
+            profileIcon.addEventListener("click", (e) => {
+                e.stopPropagation();
+                profileDropdown.style.display =
+                    profileDropdown.style.display === "flex" ? "none" : "flex";
+            });
+        }
+        window.addEventListener("click", (e) => {
+            if (navLinks && navLinks.classList.contains('active') && !navLinks.contains(e.target) && e.target !== navToggle) {
+                 navLinks.classList.remove("active");
+            }
+            if (profileDropdown && !profileDropdown.contains(e.target) && e.target !== profileIcon) {
+                profileDropdown.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>

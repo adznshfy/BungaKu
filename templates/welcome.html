@@ -16,7 +16,7 @@
             <p>Halo, {{ session.nama }}! Selamat datang kembali.</p>
             <a href="{{ url_for('home_buyer') }}" class="btn-welcome btn-primary">Lanjutkan Belanja</a>
         {% else %}
-            <p>Temukan bunga yang sempurna untuk setiap momen spesial Anda.</p>
+            <p>Setiap bunga punya cerita.</p>
             <a href="{{ url_for('login') }}" class="btn-welcome-btn-primary">Login</a>
             <a href="{{ url_for('register') }}" class="btn-welcome-btn-secondary">Register</a>
         {% endif %}

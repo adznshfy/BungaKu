@@ -1,0 +1,53 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Manajemen Pengguna{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h1 style="font-weight: 600; margin-bottom: 0;">Manajemen Pengguna</h1>
+    <div>
+        <a href="{{ url_for('admin_add_user') }}" class="btn-primary" style="text-decoration:none; font-size: 14px; padding: 10px 20px;">
+            <i class="fas fa-plus"></i> Tambah Pengguna
+        </a>
+        <a href="{{ url_for('admin_export_users') }}" class="btn-primary" style="background-color: #198754; text-decoration:none; font-size: 14px; padding: 10px 20px;">
+            <i class="fas fa-download"></i> Ekspor
+        </a>
+    </div>
+</div>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>Email</th>
+            <th>Peran</th>
+            <th>Status</th>
+            <th style="width: 15%;">Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id_user }}</td>
+            <td>{{ user.nama }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.level_name }}</td>
+            <td>
+                <span class="badge {% if user.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                    {% if user.is_active %}Aktif{% else %}Tidak Aktif{% endif %}
+                </span>
+            </td>
+            <td>
+                <a href="{{ url_for('admin_edit_user', user_id=user.id_user) }}" class="btn-aksi btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                <form action="{{ url_for('admin_toggle_user_active', user_id=user.id_user) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin mengubah status pengguna ini?');" style="display:inline;">
+                    <button type="submit" class="btn-aksi {% if user.is_active %}btn-toggle-off{% else %}btn-toggle-on{% endif %}" title="{% if user.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %}">
+                        <i class="fas {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
