@@ -1,0 +1,43 @@
+{# templates/_reviews_list.html #}
+{% for review in reviews %}
+<div class="review-card card mb-3">
+    <div class="card-body">
+        <div class="d-flex">
+            <img src="{{ url_for('static', filename='uploads/' + review.foto_pembeli if review.foto_pembeli else 'images/default_profile.png') }}" class="rounded-circle" style="width:50px; height:50px; object-fit: cover;">
+            <div class="ms-3">
+                <strong>{{ review.nama_pembeli }}</strong>
+                <div class="text-warning">
+                    {% for i in range(1, 6) %}{% if i <= review.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
+                </div>
+            </div>
+        </div>
+        <p class="mt-2">{{ review.komentar }}</p>
+        
+        {% if review.media_file %}
+            {% if review.media_file.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                <img src="{{ url_for('static', filename='uploads/' + review.media_file) }}" class="img-thumbnail mt-2" style="max-width: 150px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-img-src="{{ url_for('static', filename='uploads/' + review.media_file) }}">
+            {% else %}
+                <video width="200" controls class="mt-2">
+                    <source src="{{ url_for('static', filename='uploads/' + review.media_file) }}" type="video/mp4">
+                    Browser Anda tidak mendukung tag video.
+                </video>
+            {% endif %}
+        {% endif %}
+
+        {% if review.balasan_penjual %}
+            <div class="alert alert-light mt-3 p-2">
+                <strong class="small">Balasan Penjual:</strong>
+                <p class="mb-0 small fst-italic">{{ review.balasan_penjual }}</p>
+            </div>
+        {% elif session.id_user == product.id_user %}
+            <form action="{{ url_for('reply_to_rating', rating_id=review.id) }}" method="POST" class="mt-3">
+                <textarea name="balasan" class="form-control form-control-sm" rows="2" placeholder="Tulis balasan..."></textarea>
+                <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Balas</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% if not reviews %}
+    <p class="text-center text-muted">Tidak ada ulasan untuk filter ini.</p>
+{% endif %}

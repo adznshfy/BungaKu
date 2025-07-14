@@ -33,7 +33,6 @@
 
         {# KOLOM DETAIL PRODUK #}
         <div class="col-md-7">
-            {# Pesan untuk pemilik toko #}
             {% if session.id_user == product.id_user %}
             <div class="alert alert-info d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-info-circle"></i> Anda melihat produk ini sebagai pemilik toko.</span>
@@ -48,7 +47,6 @@
                 </small>
             </div>
             
-            {# Tampilan Rating #}
             <div class="mb-3">
                 {% if rating_summary.total_ratings > 0 %}
                     <span class="text-warning">
@@ -61,10 +59,8 @@
                 {% endif %}
             </div>
 
-            {# Tampilan Harga #}
             <div class="price-display-box bg-light p-3 rounded mb-3">
                 <h3 id="product-price-display" class="mb-0 text-success">
-                    {# Menampilkan rentang harga jika varian lebih dari 1 #}
                     {% if variations|length > 1 %}
                         Rp {{ "{:,.0f}".format(variations[0].harga) }} - Rp {{ "{:,.0f}".format(variations[-1].harga) }}
                     {% elif variations|length == 1 %}
@@ -75,7 +71,6 @@
                 </h3>
             </div>
 
-            {# Opsi Varian #}
             <div class="mb-3">
                 <label class="form-label fw-bold">Pilih Varian:</label>
                 <div id="variation-options" class="d-flex flex-wrap gap-2">
@@ -91,19 +86,15 @@
                 <div id="stock-display" class="form-text mt-2" style="height: 20px;"></div>
             </div>
 
-            {# STRUKTUR FORM YANG DIPERBAIKI #}
-            {# Form untuk Masukkan Keranjang (tidak terlihat, hanya untuk data) #}
             <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="add-to-cart-form">
                 <input type="hidden" name="selected_variation_id" id="cart-variation-id">
             </form>
 
-            {# Form untuk Beli Sekarang (tidak terlihat, hanya untuk data) #}
             <form action="{{ url_for('beli_sekarang') }}" method="POST" id="buy-now-form">
                 <input type="hidden" name="selected_variation_id" id="buy-now-variation-id">
                 <input type="hidden" name="product_id" value="{{ product.id }}">
             </form>
 
-            {# Tombol Aksi yang terhubung ke form di atas menggunakan atribut 'form' #}
             <div class="mt-4 d-grid gap-2">
                 <button type="submit" form="add-to-cart-form" class="btn btn-outline-primary" id="add-to-cart-btn" disabled>
                     <i class="fas fa-shopping-cart"></i> Masukkan Keranjang
@@ -111,6 +102,26 @@
                 <button type="submit" form="buy-now-form" class="btn btn-success" id="buy-now-btn" disabled>
                     Beli Sekarang
                 </button>
+
+                {% if session.id_user != product.id_user %}
+                <form action="{{ url_for('wishlist_toggle', product_id=product.id) }}" method="POST">
+                    {% if is_in_wishlist %}
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-heart-broken"></i> Hapus dari Wishlist
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="far fa-heart"></i> Tambah ke Wishlist
+                        </button>
+                    {% endif %}
+                </form>
+                {% endif %}
+
+                {% if session.id_user != product.id_user %}
+                <a href="{{ url_for('initiate_chat', penjual_id=product.id_user, produk_id=product.id) }}" class="btn btn-info">
+                    <i class="fas fa-comment-dots"></i> Chat Penjual
+                </a>
+                {% endif %}
             </div>
 
         </div>
@@ -120,80 +131,38 @@
         <p>{{ product.description | safe }}</p>
     </div>
     <hr class="my-5">
-<div class="reviews-section">
-    <h4>Ulasan Pembeli</h4>
-    {% if rating_summary.total_ratings > 0 %}
-    <div class="row">
-        {# Kolom Kiri: Ringkasan Rata-rata #}
-        <div class="col-md-4">
-            <div class="d-flex flex-column align-items-center justify-content-center h-100 border-end">
-                <span style="font-size: 3rem; font-weight: bold;">{{ "%.1f"|format(rating_summary.avg_rating) }}</span>
-                <div class="text-warning h4">
-                    {% for i in range(1, 6) %}{% if i <= rating_summary.avg_rating|round %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
-                </div>
-                <small>{{ rating_summary.total_ratings }} ulasan</small>
-            </div>
-        </div>
-
-        {# Kolom Kanan: Filter Bintang #}
-        <div class="col-md-8">
-            <div class="rating-filters">
-                <button class="btn btn-outline-secondary btn-sm active">Semua</button>
-                {% for star in [5, 4, 3, 2, 1] %}
-                <button class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-star text-warning"></i> {{ star }} ({{ rating_counts.get(star, 0) }})
-                </button>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    <hr>
-    {% endif %}
-
-    {# Kontainer untuk menampilkan daftar ulasan #}
-    <div id="reviews-container">
-        {% for review in reviews %}
-        <div class="review-card card mb-3">
-            <div class="card-body">
-                <div class="d-flex">
-                    <img src="{{ url_for('static', filename='uploads/' + review.foto_pembeli if review.foto_pembeli else 'images/profile.png') }}" class="rounded-circle" style="width:50px; height:50px; object-fit: cover;">
-                    <div class="ms-3">
-                        <strong>{{ review.nama_pembeli }}</strong>
-                        <div class="text-warning">
-                            {% for i in range(1, 6) %}{% if i <= review.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
-                        </div>
+    
+    <div class="reviews-section">
+        <h4>Ulasan Pembeli</h4>
+        {% if rating_summary.total_ratings > 0 %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 border-end">
+                    <span style="font-size: 3rem; font-weight: bold;">{{ "%.1f"|format(rating_summary.avg_rating) }}</span>
+                    <div class="text-warning h4">
+                        {% for i in range(1, 6) %}{% if i <= rating_summary.avg_rating|round %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
                     </div>
+                    <small>{{ rating_summary.total_ratings }} ulasan</small>
                 </div>
-                <p class="mt-2">{{ review.komentar }}</p>
-                
-                {# Menampilkan media jika ada #}
-                {% if review.media_file %}
-                    {% if review.media_file.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
-                        <img src="{{ url_for('static', filename='uploads/' + review.media_file) }}" class="img-thumbnail mt-2" style="max-width: 150px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-img-src="{{ url_for('static', filename='uploads/' + review.media_file) }}">
-                    {% else %}
-                        <video width="200" controls class="mt-2">
-                            <source src="{{ url_for('static', filename='uploads/' + review.media_file) }}" type="video/mp4">
-                            Browser Anda tidak mendukung tag video.
-                        </video>
-                    {% endif %}
-                {% endif %}
+            </div>
 
-                {% if review.balasan_penjual %}
-    {# Jika sudah ada balasan, tampilkan #}
-    <div class="alert alert-light mt-3 p-2">
-        <strong class="small">Balasan Penjual:</strong>
-        <p class="mb-0 small fst-italic">{{ review.balasan_penjual }}</p>
-    </div>
-{% elif session.id_user == product.id_user %}
-    {# Jika belum ada balasan DAN yang melihat adalah pemilik produk, tampilkan form #}
-    <form action="{{ url_for('reply_to_rating', rating_id=review.id) }}" method="POST" class="mt-3">
-        <textarea name="balasan" class="form-control form-control-sm" rows="2" placeholder="Tulis balasan..."></textarea>
-        <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Balas</button>
-    </form>
-{% endif %}
+            <div class="col-md-8">
+                <div class="rating-filters">
+                    <button class="btn btn-outline-secondary btn-sm active" data-rating="all">Semua</button>
+                    {% for star in [5, 4, 3, 2, 1] %}
+                    <button class="btn btn-outline-secondary btn-sm" data-rating="{{ star }}">
+                        <i class="fas fa-star text-warning"></i> {{ star }} ({{ rating_counts.get(star, 0) }})
+                    </button>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        {% endfor %}
+        <hr>
+        {% endif %}
+
+        <div id="reviews-container">
+            {% include '_reviews_list.html' %}
+        </div>
     </div>
 </div>
 
@@ -207,66 +176,50 @@
   </div>
 </div>
 
-
-
-</div>
-
 <style>
-    /* Style untuk tombol varian yang dipilih */
     .variation-btn.selected {
         border-color: #0d6efd;
         background-color: #e7f1ff;
         font-weight: bold;
     }
-    /* Style untuk gambar di carousel agar ukurannya pas */
     .carousel-item img {
         height: 450px;
         object-fit: cover;
     }
+    .rating-filters .btn.active {
+        background-color: #6c757d;
+        color: white;
+    }
 </style>
 
-{# SCRIPT YANG DIPERBAIKI TOTAL #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Deklarasi semua elemen yang kita butuhkan
+    // --- Logika untuk Varian Produk ---
     const variationButtons = document.querySelectorAll('.variation-btn');
     const priceDisplay = document.getElementById('product-price-display');
     const stockDisplay = document.getElementById('stock-display');
     const addToCartBtn = document.getElementById('add-to-cart-btn');
     const buyNowBtn = document.getElementById('buy-now-btn');
-    
-    // Ambil DUA hidden input, satu untuk setiap form
     const cartVariationInput = document.getElementById('cart-variation-id');
     const buyNowVariationInput = document.getElementById('buy-now-variation-id');
 
-    // Fungsi untuk format mata uang Rupiah
     const formatter = new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0
     });
 
-    // 2. Logika utama saat tombol varian di-klik
     variationButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Ambil data dari atribut 'data-*' pada tombol yang diklik
             const selectedPrice = parseFloat(this.dataset.price);
             const selectedStock = parseInt(this.dataset.stock);
             const selectedId = this.dataset.id;
-
-            // Atur style untuk menandai tombol yang aktif
             variationButtons.forEach(btn => btn.classList.remove('selected'));
             this.classList.add('selected');
-
-            // Update tampilan harga dan stok
             priceDisplay.textContent = formatter.format(selectedPrice);
             stockDisplay.textContent = `Stok tersedia: ${selectedStock}`;
-
-            // Update nilai hidden input di KEDUA form
             cartVariationInput.value = selectedId;
             buyNowVariationInput.value = selectedId;
-
-            // 3. Logika untuk mengaktifkan/menonaktifkan tombol aksi berdasarkan stok
             if (selectedStock > 0) {
                 addToCartBtn.disabled = false;
                 buyNowBtn.disabled = false;
@@ -277,14 +230,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
 
-var imageModal = document.getElementById('imageModal');
-imageModal.addEventListener('show.bs.modal', function (event) {
-  var button = event.relatedTarget;
-  var imgSrc = button.getAttribute('data-bs-img-src');
-  var modalImage = imageModal.querySelector('#modalImage');
-  modalImage.src = imgSrc;
+    // --- Logika untuk Modal Gambar ---
+    var imageModal = document.getElementById('imageModal');
+    imageModal.addEventListener('show.bs.modal', function (event) {
+      var button = event.relatedTarget;
+      var imgSrc = button.getAttribute('data-bs-img-src');
+      var modalImage = imageModal.querySelector('#modalImage');
+      modalImage.src = imgSrc;
+    });
+
+    // --- Kode untuk Filter Ulasan ---
+    const filterButtons = document.querySelectorAll('.rating-filters .btn');
+    const reviewsContainer = document.getElementById('reviews-container');
+    const productId = {{ product.id }};
+
+    async function fetchReviews(rating) {
+        let url = `/get-reviews/${productId}`;
+        if (rating && rating !== 'all') {
+            url += `?rating=${rating}`;
+        }
+        reviewsContainer.innerHTML = '<p class="text-center">Memuat ulasan...</p>';
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Gagal memuat data ulasan.');
+            }
+            const data = await response.json();
+            reviewsContainer.innerHTML = data.html;
+        } catch (error) {
+            reviewsContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
+        }
+    }
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const ratingFilter = this.dataset.rating;
+            fetchReviews(ratingFilter);
+        });
+    });
 });
 </script>
 {% endblock %}

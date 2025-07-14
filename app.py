@@ -3,13 +3,13 @@ import os
 import time
 from flask import Flask, jsonify, render_template, redirect, request, url_for, session, flash
 from flask_mysqldb import MySQL, MySQLdb
-from flask_mail import Mail
+from flask_mail import Mail, Message
 import bcrypt
 from dotenv import load_dotenv
 import email_verification
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 from flask import Response
 import io
@@ -19,10 +19,25 @@ import csv
 from weasyprint import HTML
 import json
 from decimal import Decimal
+import re
+from markupsafe import Markup
+import secrets
 
 load_dotenv()
 
 app = Flask(__name__)
+
+def markdown_link_filter(text):
+    if not text:
+        return ''
+    # Pola regex untuk menemukan [Teks](URL)
+    link_pattern = re.compile(r'\[Lihat Produk: (.*?)\]\((.*?)\)')
+    # Ganti pola dengan tag <a> HTML
+    linked_text = link_pattern.sub(r'<a href="\2" target="_blank" class="chat-product-link">Lihat Produk: <strong>\1</strong></a>', text)
+    # Gunakan Markup agar HTML tidak di-escape oleh Jinja2
+    return Markup(linked_text)
+
+app.jinja_env.filters['markdown_link'] = markdown_link_filter
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -91,7 +106,6 @@ def register():
         error = "Password minimal 6 karakter."
         return render_template("register.html", error=error)
 
-    # Check if email already exists
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT email FROM users WHERE email = %s", (email,))
     existing_user = cur.fetchone()
@@ -120,7 +134,6 @@ def login():
         password = request.form['password'].encode('utf-8')
 
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        # 1. PERUBAHAN: Tambahkan `u.is_active` pada query SELECT
         cur.execute("""
             SELECT u.id_user, u.password, u.id_level, u.id_profile, p.nama, u.email, u.is_active
             FROM users u
@@ -130,17 +143,11 @@ def login():
         user = cur.fetchone()
         cur.close()
 
-        # 2. PERUBAHAN: Logika pengecekan diubah
         if user:
-            # Cek pertama: Apakah akun user aktif?
-            # Kolom is_active di database bernilai 1 untuk aktif dan 0 untuk tidak aktif.
             if user['is_active'] == 0:
-                # Jika tidak aktif, tampilkan pesan penangguhan.
                 error = "Akun anda sedang di tangguhkan"
             
-            # Cek kedua: Jika aktif, barulah periksa password.
             elif bcrypt.checkpw(password, user['password'].encode('utf-8')):
-                # Jika password benar, lanjutkan proses login seperti biasa.
                 session['id_user'] = user['id_user']
                 session['id_profile'] = user['id_profile']
                 session['id_level'] = user['id_level']
@@ -167,7 +174,6 @@ def login():
             # Jika user dengan email tersebut tidak ditemukan.
             error = "Gagal login. Cek kembali email atau password Anda."
             
-    # Render template dengan pesan error yang sesuai.
     return render_template("login.html", error=error)
 
 
@@ -180,31 +186,25 @@ def profile():
     profile_id = session['id_profile']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Ambil data profil saat ini untuk ditampilkan atau untuk Cek file foto lama
     cur.execute("SELECT * FROM profile WHERE id_profile = %s", (profile_id,))
     profile_data = cur.fetchone()
 
     if request.method == "POST":
-        # Ambil data dari form yang dikirim
         nama = request.form['nama']
         no_telp = request.form['no_telp']
         alamat = request.form['alamat']
-        foto = request.files.get('foto') # Ambil file foto
+        foto = request.files.get('foto')
 
         foto_filename = profile_data['foto'] if profile_data else None
 
-        # Cek jika ada file foto baru yang di-upload
         if foto and foto.filename != '':
-            if allowed_file(foto.filename): # Gunakan fungsi yang sudah ada di app.py
-                # Buat nama file unik untuk menghindari konflik
+            if allowed_file(foto.filename):
                 ext = foto.filename.rsplit('.', 1)[1].lower()
                 new_filename = f"profile_{profile_id}_{int(time.time())}.{ext}"
                 foto_filename = secure_filename(new_filename)
                 
-                # Simpan file baru
                 foto.save(os.path.join(app.config['UPLOAD_FOLDER'], foto_filename))
                 
-                # Hapus file foto lama jika ada dan berbeda dari yang baru
                 old_photo = profile_data['foto'] if profile_data else None
                 if old_photo and old_photo != foto_filename:
                     old_photo_path = os.path.join(app.config['UPLOAD_FOLDER'], old_photo)
@@ -214,44 +214,35 @@ def profile():
                 flash("Jenis file gambar tidak diizinkan.", "error")
                 return redirect(url_for('profile'))
 
-        # Update data ke database
         cur.execute("""
             UPDATE profile SET nama=%s, no_telp=%s, alamat=%s, foto=%s
             WHERE id_profile=%s
         """, (nama, no_telp, alamat, foto_filename, profile_id))
         mysql.connection.commit()
 
-        # Update nama di session agar langsung tampil di layout
         session['nama'] = nama
         
         flash("Profil Anda berhasil diperbarui!", "success")
         cur.close()
         return redirect(url_for('profile'))
 
-    # Jika method adalah GET, cukup tampilkan halaman dengan data yang sudah diambil
     cur.close()
     return render_template("profile.html", profile=profile_data, id_level=session.get('id_level'))
 
-# Tambahkan dua fungsi ini di app.py
 
 @app.route('/registrasi-penjual', methods=['GET'])
 def registrasi_penjual():
-    # Penjaga: Pastikan hanya pembeli (level 4) yang bisa akses halaman ini
     if session.get('id_level') != 4:
         flash("Anda sudah terdaftar sebagai penjual atau aksi tidak diizinkan.", "warning")
         return redirect(url_for('profile'))
     
-    # Cukup tampilkan halaman formulirnya
     return render_template('registrasi_penjual.html')
-
-# Ganti seluruh fungsi proses_registrasi_penjual yang lama dengan yang ini
 
 @app.route('/proses-registrasi-penjual', methods=['POST'])
 def proses_registrasi_penjual():
     if session.get('id_level') != 4:
         return redirect(url_for('home_buyer'))
 
-    # --- 1. Ambil semua data dari form ---
     nama_toko = request.form['nama_toko']
     username_toko = request.form['username_toko'].lower().strip()
     no_hp_toko = request.form['no_hp_toko']
@@ -411,6 +402,86 @@ def ganti_password():
     # Jika metodenya GET, tampilkan halaman formulirnya
     return render_template('ganti_password.html')
 
+def send_reset_email(user):
+    token = secrets.token_urlsafe(32)
+    expiry = datetime.utcnow() + timedelta(hours=1) # Token berlaku 1 jam
+
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE users SET reset_token = %s, reset_token_expiry = %s WHERE id_user = %s", (token, expiry, user['id_user']))
+    mysql.connection.commit()
+    cur.close()
+
+    # Buat link reset
+    reset_url = url_for('reset_password', token=token, _external=True)
+
+    # Kirim email
+    msg = Message('Link Reset Password - BungaKu',
+                  sender=os.getenv('MAIL_USERNAME'),
+                  recipients=[user['email']])
+    msg.body = f'''Untuk mereset password Anda, silakan kunjungi link berikut:
+{reset_url}
+
+Jika Anda tidak merasa meminta reset password, abaikan email ini.
+Link ini akan kedaluwarsa dalam 1 jam.
+'''
+    email_verification.mail.send(msg)
+
+@app.route('/request-reset', methods=['GET', 'POST'])
+def request_reset():
+    if request.method == 'POST':
+        email = request.form['email']
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
+        cur.close()
+
+        if user:
+            send_reset_email(user) # Panggil fungsi helper
+        
+        # Pesan ini ditampilkan baik user ada atau tidak, demi keamanan
+        flash('Jika email Anda terdaftar, link untuk mereset password telah dikirim.', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('request_reset.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    # CARI USER DENGAN TOKEN VALID DAN GUNAKAN UTC_TIMESTAMP()
+    cur.execute("SELECT * FROM users WHERE reset_token = %s AND reset_token_expiry > UTC_TIMESTAMP()", (token,))
+    user = cur.fetchone()
+
+    if not user:
+        cur.close()
+        flash('Token reset password tidak valid atau sudah kedaluwarsa.', 'error')
+        return redirect(url_for('request_reset'))
+
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if password != confirm_password:
+            flash('Password dan konfirmasi password tidak cocok.', 'error')
+            return redirect(url_for('reset_password', token=token))
+        
+        if len(password) < 6:
+            flash('Password minimal 6 karakter.', 'error')
+            return redirect(url_for('reset_password', token=token))
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        cur.execute("""
+            UPDATE users SET password = %s, reset_token = NULL, reset_token_expiry = NULL
+            WHERE id_user = %s
+        """, (hashed_password.decode('utf-8'), user['id_user']))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Password Anda telah berhasil direset! Silakan login.', 'success')
+        return redirect(url_for('login'))
+
+    cur.close()
+    return render_template('reset_password.html', token=token)
 # Ganti fungsi home_buyer yang lama dengan yang ini di app.py
 
 # Ganti seluruh fungsi home_buyer() Anda dengan kode ini
@@ -432,7 +503,49 @@ def home_buyer():
     # --- AKHIR PENJAGA ---
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    cursor.execute("SELECT * FROM categories ORDER BY name ASC")
+    categories = cursor.fetchall()
+    
     cursor.execute("""
+        SELECT 
+            p.id, p.name, p.description, p.id_user, 
+            t.nama_toko, t.username_toko,
+            c.name as category_name, c.slug as category_slug,
+            (SELECT nama_file_gambar FROM product_images WHERE id_produk = p.id ORDER BY id ASC LIMIT 1) as main_image,
+            (SELECT MIN(harga) FROM product_variations WHERE id_produk = p.id) as min_price
+        FROM products p
+        JOIN users u ON p.id_user = u.id_user
+        JOIN toko t ON u.id_user = t.id_user
+        LEFT JOIN categories c ON p.id_kategori = c.id
+        WHERE p.is_active = 1
+    """)
+    produk = cursor.fetchall()
+    cursor.close()
+
+    return render_template("home_buyer.html", produk=produk, categories=categories)
+
+@app.route('/category/<string:slug>')
+def products_by_category(slug):
+    if 'id_user' not in session or session.get('id_level') not in [3, 4]:
+        return redirect(url_for('login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Ambil detail kategori yang aktif berdasarkan slug
+    cur.execute("SELECT * FROM categories WHERE slug = %s", (slug,))
+    active_category = cur.fetchone()
+
+    if not active_category:
+        flash("Kategori tidak ditemukan.", "error")
+        return redirect(url_for('home_buyer'))
+
+    # Ambil semua kategori untuk navigasi
+    cur.execute("SELECT * FROM categories ORDER BY name ASC")
+    all_categories = cur.fetchall()
+
+    # Ambil semua produk yang termasuk dalam kategori ini
+    cur.execute("""
         SELECT 
             p.id, p.name, p.description, p.id_user, 
             t.nama_toko, t.username_toko,
@@ -441,28 +554,17 @@ def home_buyer():
         FROM products p
         JOIN users u ON p.id_user = u.id_user
         JOIN toko t ON u.id_user = t.id_user
-        WHERE p.is_active = 1
-    """)
-    produk = cursor.fetchall()
-    cursor.close()
+        WHERE p.is_active = 1 AND p.id_kategori = %s
+    """, (active_category['id'],))
+    produk_in_category = cur.fetchall()
+    cur.close()
 
-    return render_template("home_buyer.html", produk=produk)
+    # Kita bisa menggunakan template home_buyer.html lagi
+    return render_template("home_buyer.html", 
+                           produk=produk_in_category, 
+                           categories=all_categories,
+                           active_category=active_category)
 
-@app.route('/home-seller')
-def home_seller():
-    # Hak akses untuk penjual (level 3)
-    if session.get('id_level') != 3:
-        flash("Hanya penjual yang dapat mengakses halaman ini.", "error")
-        return redirect(url_for('home_buyer'))
-    return render_template('home_seller.html')
-
-# Menampilkan produk berdasarkan penjual yang login
-# Ganti fungsi seller_product() yang lama dengan ini di app.py
-
-# Ganti seluruh fungsi dashboard_penjual yang lama dengan yang ini
-
-# Ganti seluruh fungsi dashboard_penjual() Anda dengan kode ini
-# GANTI TOTAL FUNGSI dashboard_penjual ANDA DENGAN YANG INI
 @app.route('/dashboard-penjual')
 def dashboard_penjual():
     if session.get('id_level') != 3:
@@ -540,6 +642,109 @@ def dashboard_penjual():
                            produk=daftar_produk, 
                            pesanan_masuk=pesanan_masuk,
                            daftar_retur=daftar_retur)
+
+@app.route('/data-penjualan')
+def data_penjualan():
+    # Keamanan: Pastikan hanya penjual yang bisa akses
+    if 'id_user' not in session or session.get('id_level') != 3:
+        flash("Halaman ini hanya untuk penjual.", "error")
+        return redirect(url_for('home_buyer'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # 1. Ambil KPI Utama (Key Performance Indicators)
+    cur.execute("""
+        SELECT 
+            SUM(ti.harga_saat_beli * ti.kuantitas) as total_pendapatan,
+            COUNT(DISTINCT t.id_transaksi) as total_pesanan,
+            SUM(ti.kuantitas) as item_terjual
+        FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id
+        JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
+        WHERE p.id_user = %s AND t.status IN ('selesai', 'retur_selesai')
+    """, (user_id,))
+    kpi = cur.fetchone()
+
+    # 2. Ambil data untuk Diagram Garis (Penjualan 30 Hari Terakhir)
+    cur.execute("""
+        SELECT DATE(t.tanggal_pesanan) as tanggal, SUM(ti.harga_saat_beli * ti.kuantitas) as pendapatan_harian
+        FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id
+        JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
+        WHERE p.id_user = %s AND t.status IN ('selesai', 'retur_selesai') AND t.tanggal_pesanan >= CURDATE() - INTERVAL 30 DAY
+        GROUP BY DATE(t.tanggal_pesanan)
+        ORDER BY tanggal ASC
+    """, (user_id,))
+    penjualan_harian = cur.fetchall()
+    line_chart_labels = [item['tanggal'].strftime('%d %b') for item in penjualan_harian]
+    line_chart_data = [float(item['pendapatan_harian']) for item in penjualan_harian]
+
+    # 3. Ambil data untuk Diagram Batang (Top 5 Produk Terlaris)
+    cur.execute("""
+        SELECT p.name, SUM(ti.kuantitas) as total_terjual
+        FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id
+        JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
+        WHERE p.id_user = %s AND t.status IN ('selesai', 'retur_selesai')
+        GROUP BY p.id
+        ORDER BY total_terjual DESC
+        LIMIT 5
+    """, (user_id,))
+    top_produk = cur.fetchall()
+    bar_chart_labels = [item['name'] for item in top_produk]
+    bar_chart_data = [item['total_terjual'] for item in top_produk]
+
+    cur.close()
+
+    return render_template('data_penjualan.html', 
+                           kpi=kpi,
+                           line_chart_labels=line_chart_labels,
+                           line_chart_data=line_chart_data,
+                           bar_chart_labels=bar_chart_labels,
+                           bar_chart_data=bar_chart_data)
+
+
+@app.route('/download-laporan-penjualan')
+def download_laporan_penjualan():
+    # Keamanan: Pastikan hanya penjual yang bisa akses
+    if 'id_user' not in session or session.get('id_level') != 3:
+        return redirect(url_for('home_buyer'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Ambil data transaksi yang lebih detail untuk laporan
+    cur.execute("""
+        SELECT 
+            t.id_transaksi,
+            t.tanggal_pesanan,
+            p.name as nama_produk,
+            pv.nama_varian,
+            ti.kuantitas,
+            ti.harga_saat_beli,
+            (ti.kuantitas * ti.harga_saat_beli) as subtotal
+        FROM transaksi_items ti
+        JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
+        JOIN products p ON ti.id_produk = p.id
+        LEFT JOIN product_variations pv ON ti.id_varian = pv.id
+        WHERE p.id_user = %s AND t.status IN ('selesai', 'retur_selesai')
+        ORDER BY t.tanggal_pesanan DESC
+    """, (user_id,))
+    data = cur.fetchall()
+    cur.close()
+
+    # Buat file Excel menggunakan Pandas
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    # Gunakan 'with' untuk memastikan writer tertutup dengan benar
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Laporan Penjualan', index=False)
+    output.seek(0)
+    
+    return Response(output, 
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=laporan_penjualan_toko_anda.xlsx"})
 
 @app.route('/edit-toko', methods=['GET'])
 def edit_toko():
@@ -690,6 +895,12 @@ def product_detail(product_id):
         flash("Produk ini sedang tidak tersedia.", "error")
         cur.close()
         return redirect(url_for('home_buyer'))
+    
+    is_in_wishlist = False
+    if 'id_user' in session:
+        cur.execute("SELECT id FROM wishlist WHERE id_user = %s AND id_produk = %s", (session['id_user'], product_id))
+        if cur.fetchone():
+            is_in_wishlist = True
         
     # 2. Ambil gambar & varian
     cur.execute("SELECT * FROM product_images WHERE id_produk = %s", (product_id,))
@@ -731,7 +942,274 @@ def product_detail(product_id):
                            variations=variations, 
                            reviews=reviews, 
                            rating_summary=rating_summary,
-                           rating_counts=rating_counts)
+                           rating_counts=rating_counts,
+                           is_in_wishlist=is_in_wishlist)
+    
+# Tambahkan fungsi baru ini di app.py
+
+@app.route('/get-reviews/<int:product_id>')
+def get_reviews(product_id):
+    # Ambil filter rating dari parameter URL, contoh: /get-reviews/1?rating=5
+    rating_filter = request.args.get('rating', type=int)
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Kita butuh info produk untuk form balasan penjual
+    cur.execute("SELECT id_user FROM products WHERE id = %s", (product_id,))
+    product = cur.fetchone()
+
+    # Siapkan query dasar
+    query = """
+        SELECT r.*, prof.nama as nama_pembeli, prof.foto as foto_pembeli
+        FROM product_ratings r
+        JOIN users u ON r.id_user = u.id_user
+        JOIN profile prof ON u.id_profile = prof.id_profile
+        WHERE r.id_produk = %s
+    """
+    params = [product_id]
+
+    # Jika ada filter rating, tambahkan kondisi ke query
+    if rating_filter and rating_filter in [1, 2, 3, 4, 5]:
+        query += " AND r.rating = %s"
+        params.append(rating_filter)
+    
+    query += " ORDER BY r.tanggal_rating DESC"
+    
+    cur.execute(query, tuple(params))
+    reviews = cur.fetchall()
+    cur.close()
+
+    # Render HANYA bagian daftar ulasan menjadi sebuah string HTML
+    html_reviews = render_template('_reviews_list.html', reviews=reviews, product=product)
+
+    # Kembalikan sebagai JSON
+    return jsonify({'html': html_reviews})
+    
+@app.route('/chat/initiate/penjual/<int:penjual_id>')
+def initiate_chat(penjual_id):
+    if 'id_user' not in session:
+        flash("Anda harus login untuk memulai percakapan.", "error")
+        return redirect(url_for('login'))
+
+    pembeli_id = session['id_user']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Cek apakah percakapan sudah ada
+    cur.execute("SELECT id FROM percakapan WHERE id_pembeli = %s AND id_penjual = %s", (pembeli_id, penjual_id))
+    percakapan = cur.fetchone()
+
+    if percakapan:
+        id_percakapan = percakapan['id']
+    else:
+        # Jika belum ada, buat percakapan baru
+        cur.execute("""
+            INSERT INTO percakapan (id_pembeli, id_penjual) VALUES (%s, %s)
+        """, (pembeli_id, penjual_id))
+        mysql.connection.commit()
+        id_percakapan = cur.lastrowid
+    
+    cur.close()
+    return redirect(url_for('chat_room', percakapan_id=id_percakapan))
+
+
+@app.route('/chat/room/<int:percakapan_id>', methods=['GET', 'POST'])
+def chat_room(percakapan_id):
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Keamanan: Pastikan user adalah bagian dari percakapan
+    percakapan = cur.execute("SELECT * FROM percakapan WHERE id = %s AND (id_pembeli = %s OR id_penjual = %s)", 
+                (percakapan_id, user_id, user_id))
+    percakapan = cur.fetchone()
+
+    if not percakapan:
+        flash("Anda tidak memiliki akses ke percakapan ini.", "error")
+        cur.close()
+        return redirect(url_for('inbox'))
+
+    if request.method == 'POST':
+        isi_pesan = request.form.get('isi_pesan')
+        id_pesan_balasan = request.form.get('id_pesan_balasan') # Ambil ID balasan
+        
+        # Jika id balasan kosong, simpan sebagai NULL
+        if not id_pesan_balasan:
+            id_pesan_balasan = None
+
+        if isi_pesan:
+            cur.execute("""
+                INSERT INTO pesan_chat (id_percakapan, id_pengirim, isi_pesan, id_pesan_balasan) 
+                VALUES (%s, %s, %s, %s)
+            """, (percakapan_id, user_id, isi_pesan, id_pesan_balasan))
+            # Update tanggal terakhir percakapan
+            cur.execute("UPDATE percakapan SET tanggal_update_terakhir = NOW() WHERE id = %s", (percakapan_id,))
+            mysql.connection.commit()
+        return redirect(url_for('chat_room', percakapan_id=percakapan_id))
+
+    # Ambil semua pesan dalam percakapan
+    daftar_pesan = cur.execute("""
+        SELECT pc.*, p.nama as nama_pengirim 
+        FROM pesan_chat pc JOIN users u ON pc.id_pengirim = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE pc.id_percakapan = %s ORDER BY pc.tanggal_kirim ASC
+    """, (percakapan_id,))
+    daftar_pesan = cur.fetchall()
+    
+    pesan_dict = {p['id']: p for p in daftar_pesan}
+
+    # Tentukan info lawan bicara
+    lawan_bicara_id = percakapan['id_penjual'] if user_id == percakapan['id_pembeli'] else percakapan['id_pembeli']
+    cur.execute("""
+        SELECT u.id_level, p.nama, p.foto, t.nama_toko, t.foto_toko 
+        FROM users u 
+        LEFT JOIN profile p ON u.id_profile = p.id_profile 
+        LEFT JOIN toko t ON u.id_user = t.id_user 
+        WHERE u.id_user = %s
+    """, (lawan_bicara_id,))
+    lawan_bicara_raw = cur.fetchone()
+    
+    lawan_bicara_info = {
+        'nama': lawan_bicara_raw['nama_toko'] if lawan_bicara_raw['id_level'] == 3 else lawan_bicara_raw['nama'],
+        'foto': lawan_bicara_raw['foto_toko'] if lawan_bicara_raw['id_level'] == 3 else lawan_bicara_raw['foto']
+    }
+        
+    id_penjual_chat = percakapan['id_penjual']
+    cur.execute("""
+        SELECT id, name, (SELECT nama_file_gambar FROM product_images WHERE id_produk = p.id ORDER BY id ASC LIMIT 1) as main_image
+        FROM products p
+        WHERE id_user = %s AND is_active = 1
+    """, (id_penjual_chat,))
+    seller_products = cur.fetchall()
+
+    cur.close()
+    return render_template('chat_room.html', 
+                           percakapan=percakapan, 
+                           pesan=daftar_pesan, 
+                           pesan_dict=pesan_dict,
+                           lawan_bicara=lawan_bicara_info,
+                           seller_products=seller_products)
+
+
+@app.route('/inbox')
+def inbox():
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+        
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Ambil semua percakapan yang melibatkan user ini
+    cur.execute("""
+        SELECT 
+            p.id, 
+            p.tanggal_update_terakhir,
+            CASE 
+                WHEN p.id_pembeli = %s THEN t.nama_toko 
+                ELSE pembeli_prof.nama 
+            END as nama_lawan_bicara,
+            CASE 
+                WHEN p.id_pembeli = %s THEN t.foto_toko 
+                ELSE pembeli_prof.foto 
+            END as foto_lawan_bicara,
+            (SELECT isi_pesan FROM pesan_chat WHERE id_percakapan = p.id ORDER BY tanggal_kirim DESC LIMIT 1) as pesan_terakhir
+        FROM percakapan p
+        JOIN users pembeli ON p.id_pembeli = pembeli.id_user
+        JOIN profile pembeli_prof ON pembeli.id_profile = pembeli_prof.id_profile
+        JOIN users penjual ON p.id_penjual = penjual.id_user
+        JOIN toko t ON penjual.id_user = t.id_user
+        WHERE p.id_pembeli = %s OR p.id_penjual = %s
+        ORDER BY p.tanggal_update_terakhir DESC
+    """, (user_id, user_id, user_id, user_id))
+    daftar_percakapan = cur.fetchall()
+    cur.close()
+    
+    return render_template('inbox.html', daftar_percakapan=daftar_percakapan)
+
+@app.route('/wishlist/toggle/<int:product_id>', methods=['POST'])
+def wishlist_toggle(product_id):
+    if 'id_user' not in session:
+        flash("Anda harus login untuk menggunakan wishlist.", "error")
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor()
+    
+    # Cek apakah item sudah ada di wishlist
+    cur.execute("SELECT id FROM wishlist WHERE id_user = %s AND id_produk = %s", (user_id, product_id))
+    item = cur.fetchone()
+
+    if item:
+        # Jika ada, hapus dari wishlist
+        cur.execute("DELETE FROM wishlist WHERE id_user = %s AND id_produk = %s", (user_id, product_id))
+        flash('Produk telah dihapus dari wishlist.', 'info')
+    else:
+        # Jika tidak ada, tambahkan ke wishlist
+        cur.execute("INSERT INTO wishlist (id_user, id_produk) VALUES (%s, %s)", (user_id, product_id))
+        flash('Produk berhasil ditambahkan ke wishlist!', 'success')
+    
+    mysql.connection.commit()
+    cur.close()
+    return redirect(request.referrer or url_for('home_buyer'))
+
+
+@app.route('/wishlist')
+def wishlist():
+    if 'id_user' not in session:
+        flash("Anda harus login untuk melihat wishlist.", "error")
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Ambil semua produk dalam wishlist pengguna beserta detailnya
+    cur.execute("""
+        SELECT 
+            p.id, p.name, t.nama_toko, t.username_toko,
+            (SELECT nama_file_gambar FROM product_images WHERE id_produk = p.id ORDER BY id ASC LIMIT 1) as main_image,
+            (SELECT MIN(harga) FROM product_variations WHERE id_produk = p.id AND is_active = 1) as min_price
+        FROM wishlist w
+        JOIN products p ON w.id_produk = p.id
+        JOIN users u ON p.id_user = u.id_user
+        JOIN toko t ON u.id_user = t.id_user
+        WHERE w.id_user = %s
+        ORDER BY w.added_on DESC
+    """, (user_id,))
+    wishlist_items = cur.fetchall()
+    cur.close()
+
+    return render_template('wishlist.html', items=wishlist_items)
+
+# Tambahkan ini di app.py
+
+@app.route('/search')
+def search():
+    # Ambil kata kunci dari URL (?q=...)
+    query = request.args.get('q', '')
+    
+    # Siapkan untuk query ke database
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    search_term = f"%{query}%" # Tambahkan wildcard % untuk pencarian parsial
+
+    # Query untuk mencari produk berdasarkan nama atau deskripsi
+    cur.execute("""
+        SELECT 
+            p.id, p.name, t.nama_toko, t.username_toko,
+            (SELECT nama_file_gambar FROM product_images WHERE id_produk = p.id ORDER BY id ASC LIMIT 1) as main_image,
+            (SELECT MIN(harga) FROM product_variations WHERE id_produk = p.id AND is_active = 1) as min_price
+        FROM products p
+        JOIN users u ON p.id_user = u.id_user
+        JOIN toko t ON u.id_user = t.id_user
+        WHERE p.is_active = 1 AND (p.name LIKE %s OR p.description LIKE %s)
+    """, (search_term, search_term))
+    
+    search_results = cur.fetchall()
+    cur.close()
+
+    # Kirim hasil pencarian ke template baru
+    return render_template('search_results.html', results=search_results, query=query)   
 
 # Tambahkan route baru ini di app.py
 @app.route('/toggle-product-active/<int:product_id>', methods=['POST'])
@@ -767,17 +1245,20 @@ def add_product():
         flash("Hanya penjual yang dapat menambah produk.", "error")
         return redirect(url_for('home_buyer'))
 
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
     if request.method == 'POST':
         cur = mysql.connection.cursor()
         try:
             # 1. Ambil data utama produk
             name = request.form['name']
             description = request.form['description']
+            id_kategori = request.form.get('id_kategori')
             seller_id = session['id_user']
 
             # 2. Simpan data utama ke tabel 'products'
-            cur.execute("INSERT INTO products (name, description, id_user) VALUES (%s, %s, %s)",
-                       (name, description, seller_id))
+            cur.execute("INSERT INTO products (name, description, id_user, id_kategori) VALUES (%s, %s, %s, %s)",
+                       (name, description, seller_id, id_kategori))
             
             # 3. Ambil ID dari produk yang BARU SAJA dibuat
             product_id = cur.lastrowid
@@ -821,8 +1302,12 @@ def add_product():
             print(f"ERROR add_product: {e}") # untuk debug di terminal
         finally:
             cur.close()
+            
+    cur.execute("SELECT * FROM categories ORDER BY name ASC")
+    categories = cur.fetchall()
+    cur.close()
 
-    return render_template('add_product.html')
+    return render_template('add_product.html',categories=categories)
 
 # GANTI TOTAL FUNGSI edit_product ANDA DENGAN YANG INI
 @app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
@@ -844,7 +1329,9 @@ def edit_product(product_id):
         try:
             name = request.form['name']
             description = request.form['description']
-            cur.execute("UPDATE products SET name = %s, description = %s WHERE id = %s", (name, description, product_id))
+            id_kategori = request.form.get('id_kategori')
+            cur.execute("UPDATE products SET name = %s, description = %s, id_kategori = %s WHERE id = %s", 
+                        (name, description, id_kategori, product_id))
 
             images_to_delete_ids = request.form.getlist('delete_images')
             if images_to_delete_ids:
@@ -889,6 +1376,10 @@ def edit_product(product_id):
             cur.close()
 
     # Bagian GET Method (menampilkan data)
+    
+    cur.execute("SELECT * FROM products WHERE id = %s AND id_user = %s", (product_id, session['id_user']))
+    produk = cur.fetchone()
+    
     cur.execute("SELECT * FROM product_images WHERE id_produk = %s", (product_id,))
     images = cur.fetchall()
     # [FIX] Hanya ambil varian yang aktif untuk ditampilkan di form edit
@@ -896,9 +1387,12 @@ def edit_product(product_id):
     variations = cur.fetchall()
     cur.execute("SELECT * FROM vouchers WHERE id_produk = %s", (product_id,))
     vouchers = cur.fetchall()
+    
+    cur.execute("SELECT * FROM categories ORDER BY name ASC")
+    categories = cur.fetchall()
     cur.close()
     
-    return render_template('edit_product.html', produk=produk, images=images, variations=variations, vouchers=vouchers)
+    return render_template('edit_product.html', produk=produk, images=images, variations=variations, vouchers=vouchers, categories=categories)
 
 @app.route('/tambah-voucher/<int:product_id>', methods=['POST'])
 def tambah_voucher(product_id):
@@ -1124,10 +1618,6 @@ def beli_produk(product_id):
     finally:
         cursor.close()
 
-# Route untuk melihat riwayat pembelian
-# GANTI TOTAL FUNGSI RIWAYAT ANDA DENGAN YANG INI
-# GANTI TOTAL FUNGSI RIWAYAT DI APP.PY ANDA DENGAN YANG INI
-
 @app.route("/riwayat")
 def riwayat():
     if 'id_user' not in session:
@@ -1229,28 +1719,8 @@ def filter_riwayat(status):
     
     cur.close()
 
-    # Render template potongan '_riwayat_list.html' dengan data yang sudah difilter
     return render_template('_riwayat_list.html', orders=orders)
 
-@app.route("/produk")
-def list_produk():
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("SELECT * FROM products WHERE stock > 0") # Filter by stock
-    produk = cursor.fetchall()
-    cursor.close()
-    return render_template("produk.html", produk=produk)
-
-@app.route('/edit-profile')
-def edit_profile():
-    return render_template("edit_profile.html")
-
-@app.route('/profile-changed')
-def profile_changed():
-    return render_template("profile_changed.html")
-
-# --- Fitur Keranjang Belanja Baru ---
-
-# Ganti fungsi add_to_cart yang lama dengan yang ini di app.py
 
 @app.route('/add-to-cart/<int:product_id>', methods=['POST'])
 def add_to_cart(product_id):

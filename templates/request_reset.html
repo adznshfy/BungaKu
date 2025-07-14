@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}Reset Password{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px; margin-top: 5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Lupa Password</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Masukkan alamat email Anda yang terdaftar. Kami akan mengirimkan link untuk mereset password Anda.</p>
+            <form method="POST" action="{{ url_for('request_reset') }}">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Alamat Email</label>
+                    <input type="email" name="email" id="email" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Kirim Link Reset</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('login') }}">Kembali ke Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

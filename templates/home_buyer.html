@@ -1,25 +1,54 @@
 {% extends "layout.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}
+    {% if active_category %}
+        Kategori: {{ active_category.name }}
+    {% else %}
+        Home
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="dashboard-card">
     <h2>Halo, {{ session['nama'] }}!</h2>
-    <p>Selamat datang di Toko Bunga Indah. Temukan bunga favoritmu di bawah ini.</p>
+    <p>Selamat datang di BungaKu. Temukan bunga favoritmu di bawah ini.</p>
 </div>
 
+<div class="category-nav mt-4">
+    <h3 class="mb-3">Telusuri Kategori</h3>
+    
+    <div class="d-flex flex-wrap">
+        <a href="{{ url_for('home_buyer') }}" class="btn {% if not active_category %}btn-primary{% else %}btn-outline-primary{% endif %} me-2 mb-2">Semua Produk</a>
+        
+        {% if categories %}
+            {# Loop pertama untuk menampilkan semua kategori kecuali 'Lainnya' #}
+            {% for cat in categories %}
+                {% if cat.name != 'Lainnya' %}
+                    <a href="{{ url_for('products_by_category', slug=cat.slug) }}" class="btn {% if active_category and active_category.id == cat.id %}btn-primary{% else %}btn-outline-primary{% endif %} me-2 mb-2">
+                        {{ cat.name }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {# Loop kedua khusus untuk menampilkan 'Lainnya' di posisi terakhir #}
+            {% for cat in categories %}
+                {% if cat.name == 'Lainnya' %}
+                    <a href="{{ url_for('products_by_category', slug=cat.slug) }}" class="btn {% if active_category and active_category.id == cat.id %}btn-primary{% else %}btn-outline-primary{% endif %} me-2 mb-2">
+                        {{ cat.name }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
 <hr>
 
-<h3>Daftar Produk</h3>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-messages">
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-        </div>
+<h3>
+    {% if active_category %}
+        Menampilkan Kategori: <strong>{{ active_category.name }}</strong>
+    {% else %}
+        Semua Produk
     {% endif %}
-{% endwith %}
+</h3>
 
 <div class="produk-list">
     {% if produk %}
@@ -43,7 +72,11 @@
             </div>
         {% endfor %}
     {% else %}
-        <p>Belum ada produk yang tersedia saat ini.</p>
+        {% if active_category %}
+            <p>Belum ada produk yang tersedia untuk kategori ini.</p>
+        {% else %}
+            <p>Belum ada produk yang tersedia saat ini.</p>
+        {% endif %}
     {% endif %}
 </div>
 

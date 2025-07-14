@@ -24,10 +24,26 @@
       <div class="nav-left">
         <button id="navToggle" class="toggle-button">☰</button>
         <span class="brand">
-          <img class="logo" src="../static/images/logo.png" /> BungaKu
+          <img
+            class="logo"
+            src="{{ url_for('static', filename='images/logo.png') }}"
+          />
+          BungaKu
         </span>
       </div>
       <div class="nav-right">
+        <form action="{{ url_for('search') }}" method="GET" class="search-form">
+          <input
+            class="form-control"
+            type="search"
+            name="q"
+            placeholder="Cari produk..."
+            value="{{ request.args.get('q', '') }}"
+          />
+          <button class="btn" type="submit" aria-label="Cari">
+            <i class="fas fa-search"></i>
+          </button>
+        </form>
         <div class="profile-menu">
           <img
             id="profileIcon"
@@ -38,6 +54,7 @@
           <div id="profileDropdown" class="dropdown-menu">
             <a href="{{ url_for('profile') }}">Edit Profil</a>
             <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+            <a href="{{ url_for('wishlist') }}">Wishlist</a>
             <a href="{{ url_for('logout') }}">Keluar</a>
           </div>
         </div>
@@ -51,18 +68,20 @@
       <a href="{{ url_for('register') }}">Register</a>
 
       {% elif session.get('id_level') in [3, 4] %}
-    <a href="{{ url_for('home_buyer') }}">Home</a>
-    <a href="{{ url_for('profile') }}">Profil</a>
-    <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
-    <a href="{{ url_for('cart') }}">Keranjang</a>
-    <a href="{{ url_for('kirim_pengaduan') }}">Lapor/Pengaduan</a>
-    <a href="{{ url_for('riwayat_pengaduan') }}">Riwayat Pengaduan</a>  {% if session.get('id_level') == 3 %}
-        <a href="{{ url_for('dashboard_penjual') }}">Dashboard Penjual</a>
-    {% endif %}
-    <a href="{{ url_for('logout') }}">Keluar</a>
+      <a href="{{ url_for('home_buyer') }}">Home</a>
+      <a href="{{ url_for('inbox') }}">Pesan</a>
+      <a href="{{ url_for('cart') }}">Keranjang</a>
+      <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+      <a href="{{ url_for('kirim_pengaduan') }}">Lapor/Pengaduan</a>
+      <a href="{{ url_for('riwayat_pengaduan') }}">Riwayat Pengaduan</a>
+      {% if session.get('id_level') == 3 %}
+      <a href="{{ url_for('dashboard_penjual') }}">Dashboard Penjual</a>
+      <a href="{{ url_for('data_penjualan') }}">Data Penjualan</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}">Keluar</a>
 
       {% else %} {% if session.get('id_level') == 1 %}
-      <a href="{{ url_for('dashboard_admin') }}">Dashboard Admin</a>
+      <a href="{{ url_for('admin_dashboard') }}">Dashboard Admin</a>
       {% elif session.get('id_level') == 2 %}
       <a href="{{ url_for('dashboard_pengelola') }}">Dashboard Pengelola</a>
       {% elif session.get('id_level') == 5 %}
@@ -73,24 +92,21 @@
     </div>
 
     <main class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        {% for category, message in messages %}
-                            Swal.fire({
-                                title: '{{ category.title() }}!',
-                                text: '{{ message }}',
-                                icon: '{{ category }}',
-                                confirmButtonText: 'Oke'
-                            });
-                        {% endfor %}
-                    });
-                </script>
-            {% endif %}
-        {% endwith %}
-        
-        {% block content %}{% endblock %}
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% for category, message in messages %}
+                Swal.fire({
+                    title: '{{ category.title() }}!',
+                    text: '{{ message }}',
+                    icon: '{{ category }}',
+                    confirmButtonText: 'Oke'
+                });
+            {% endfor %}
+        });
+      </script>
+      {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 
     <footer class="site-footer">

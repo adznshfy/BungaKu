@@ -1,27 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Selamat Datang di Toko Bunga Indah</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selamat Datang di BungaKu</title>
 
-    <div class="welcome-container">
-        <div class="card">
-        <h1>🌸 BungaKu 🌸</h1>
-        
-        {# Cek apakah pengguna sudah login atau belum #}
-        {% if 'id_user' in session %}
-            <p>Halo, {{ session.nama }}! Selamat datang kembali.</p>
-            <a href="{{ url_for('home_buyer') }}" class="btn-welcome btn-primary">Lanjutkan Belanja</a>
-        {% else %}
-            <p>Setiap bunga punya cerita.</p>
-            <a href="{{ url_for('login') }}" class="btn-welcome-btn-primary">Login</a>
-            <a href="{{ url_for('register') }}" class="btn-welcome-btn-secondary">Register</a>
-        {% endif %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div
+      class="welcome-page"
+      style="background-image: url('{{ url_for('static', filename='images/flower-bg.png') }}');"
+    >
+      <main class="welcome-main">
+        <h1>
+          <img
+            src="{{ url_for('static', filename='images/logo.png') }}"
+            alt="Logo BungaKu"
+            class="main-logo"
+          />
+          BungaKu
+        </h1>
+        <h2>Selamat Datang di Toko Bunga 
+            No. 1 di Indonesia!</h2>
+        <p>Setiap Momen, Setiap Bunga Punya Cerita</p>
+        <div class="button-group">
+          <a href="{{ url_for('login') }}" class="btn btn-login-welcome">Login</a>
+          <a href="{{ url_for('register') }}" class="btn btn-register-welcome"
+            >Register</a
+          >
+        </div>
+      </main>
     </div>
-    </div>
-
-</body>
+  </body>
 </html>

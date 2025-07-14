@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block title %}Inbox - Pesan Saya{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>Pesan Saya</h2>
+    <hr>
+    <div class="list-group">
+        {% for chat in daftar_percakapan %}
+            <a href="{{ url_for('chat_room', percakapan_id=chat.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 align-items-center">
+                    <img src="{{ url_for('static', filename='uploads/' + chat.foto_lawan_bicara if chat.foto_lawan_bicara else 'images/default_profile.png') }}" class="rounded-circle me-3" style="width:50px; height:50px; object-fit:cover;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-1">{{ chat.nama_lawan_bicara }}</h5>
+                            <small>{{ chat.tanggal_update_terakhir.strftime('%d %b') }}</small>
+                        </div>
+                        <p class="mb-1 text-muted text-truncate" style="max-width: 80%;">{{ chat.pesan_terakhir or 'Belum ada pesan' }}</p>
+                    </div>
+                </div>
+            </a>
+        {% else %}
+            <p class="text-muted">Anda belum memiliki percakapan.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+{% block title %}Chat dengan {{ lawan_bicara.nama }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <a href="{{ url_for('inbox') }}" class="btn btn-secondary mb-3">&laquo; Kembali ke Inbox</a>
+    <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center">
+            <img src="{{ url_for('static', filename='uploads/' + lawan_bicara.foto if lawan_bicara.foto else 'images/default_profile.png') }}" class="rounded-circle me-2" style="width:40px; height:40px; object-fit:cover;">
+            <h5 class="mb-0">{{ lawan_bicara.nama }}</h5>
+        </div>
+
+        
+        <div class="card-body chat-history">
+            {% for p in pesan %}
+            <div class="chat-bubble-wrapper {% if p.id_pengirim == session.id_user %}from-me{% else %}from-other{% endif %}">
+                <div class="chat-bubble">
+                    {% if p.id_pesan_balasan and pesan_dict[p.id_pesan_balasan] %}
+                        {% set original_message = pesan_dict[p.id_pesan_balasan] %}
+                        <div class="reply-context">
+                            <strong>{{ original_message.nama_pengirim }}</strong>
+                            <p>{{ original_message.isi_pesan | truncate(40) }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <p class="mb-0">{{ p.isi_pesan | markdown_link | safe }}</p>
+                    <small class="text-muted">{{ p.tanggal_kirim.strftime('%H:%M') }}</small>
+                </div>
+                <button class="btn btn-sm btn-reply" title="Balas" data-message-id="{{ p.id }}" data-sender="{{ p.nama_pengirim }}" data-content="{{ p.isi_pesan | truncate(40) }}">
+                    <i class="fas fa-reply fa-xs"></i>
+                </button>
+            </div>
+            {% else %}
+            <p class="text-center text-muted">Belum ada pesan dalam percakapan ini.</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <form method="POST" id="chat-form">
+                <div id="reply-banner" class="reply-banner-hidden">
+                    <div>
+                        <div class="reply-banner-title">Membalas <strong></strong></div>
+                        <div class="reply-banner-content"></div>
+                    </div>
+                    <button type="button" id="cancel-reply" class="btn-close btn-sm"></button>
+                </div>
+
+                <input type="hidden" name="id_pesan_balasan" id="reply-to-id">
+                
+                <div class="chat-input-area d-flex align-items-end gap-2">
+                    <textarea name="isi_pesan" id="message-input" class="form-control flex-grow-1" placeholder="Ketik pesan..." rows="1" required autofocus></textarea>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#productShareModal" title="Sisipkan Produk">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn btn-primary" type="submit" title="Kirim">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="productShareModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Pilih Produk untuk Dibagikan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group">
+            {% for product in seller_products %}
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center share-product-item"
+                   data-product-id="{{ product.id }}"
+                   data-product-name="{{ product.name }}"
+                   data-bs-dismiss="modal">
+                    <img src="{{ url_for('static', filename='uploads/' + product.main_image if product.main_image else 'images/default_product.png') }}" class="me-3" style="width:50px; height:50px; object-fit:cover;">
+                    <span>{{ product.name }}</span>
+                </a>
+            {% else %}
+                <p class="text-muted">Tidak ada produk untuk dibagikan.</p>
+            {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Scroll chat ke paling bawah saat halaman dimuat
+    const chatHistory = document.querySelector('.chat-history');
+    if(chatHistory) {
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // 2. Logika untuk Fitur Balas Pesan
+    const replyButtons = document.querySelectorAll('.btn-reply');
+    const replyBanner = document.getElementById('reply-banner');
+    const replyBannerSender = replyBanner.querySelector('strong');
+    const replyBannerContent = replyBanner.querySelector('.reply-banner-content');
+    const cancelReplyBtn = document.getElementById('cancel-reply');
+    const hiddenInput = document.getElementById('reply-to-id');
+    const messageInput = document.getElementById('message-input');
+
+    replyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const messageId = this.dataset.messageId;
+            const sender = this.dataset.sender;
+            const content = this.dataset.content;
+
+            replyBannerSender.textContent = sender;
+            replyBannerContent.textContent = content;
+            hiddenInput.value = messageId;
+            
+            replyBanner.className = '';
+            replyBanner.style.display = 'flex';
+            messageInput.focus();
+        });
+    });
+
+    if (cancelReplyBtn) {
+        cancelReplyBtn.addEventListener('click', function() {
+            replyBanner.className = 'reply-banner-hidden';
+            hiddenInput.value = '';
+        });
+    }
+
+    // 3. Logika untuk Fitur Sisipkan Produk
+    const shareProductItems = document.querySelectorAll('.share-product-item');
+    shareProductItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productName = this.dataset.productName;
+            const productId = this.dataset.productId;
+            const productUrl = `{{ url_for('product_detail', product_id=0) }}`.slice(0, -1) + productId;
+            
+            const linkText = `[Lihat Produk: ${productName}](${productUrl})`;
+            
+            messageInput.value += (messageInput.value ? '\n' : '') + linkText;
+            messageInput.focus();
+        });
+    });
+
+    // 4. Logika untuk membuat textarea tumbuh otomatis
+    if (messageInput) {
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            let newHeight = this.scrollHeight;
+            // Batasi tinggi maksimum jika perlu, contoh: 150px
+            if (newHeight > 150) {
+                this.style.height = '150px';
+                this.style.overflowY = 'auto';
+            } else {
+                this.style.height = newHeight + 'px';
+                this.style.overflowY = 'hidden';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

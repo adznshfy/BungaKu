@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
 
 * {
   margin: 0;
@@ -7,7 +7,7 @@
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   background: linear-gradient(135deg, #f5f6fa, #e0eafc);
   background-attachment: fixed;
   color: #2d3436;
@@ -45,7 +45,7 @@ body.dark-mode .navbar {
   align-items: center;
   gap: 16px;
 }
-  
+
 .nav-right {
   display: flex;
   align-items: center;
@@ -90,6 +90,87 @@ body.dark-mode .search-bar {
   background: #5e54d8;
 }
 
+.welcome-page {
+  height: 100vh;
+  width: 100vw;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  color: #333;
+  align-items: center; /* Agar konten utama berada di tengah vertikal */
+  justify-content: center; /* Agar konten utama berada di tengah horizontal */
+}
+
+/* --- Konten Utama di Tengah --- */
+.welcome-main {
+  text-align: center;
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.85
+  ); /* Latar belakang semi-transparan untuk teks */
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.welcome-main h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #5e54d8; /* Warna pink khas bunga */
+  /* Penambahan untuk menata logo dan teks */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px; /* Jarak antara logo dan teks */
+}
+
+.welcome-main h1 .main-logo {
+  height: 45px; /* Sesuaikan ukuran logo sesuai kebutuhan */
+}
+
+.welcome-main p {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+/* --- Grup Tombol --- */
+.button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 30px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-login-welcome {
+  background-color: #6f42c1; /* Warna ungu */
+  color: white;
+}
+
+.btn-register-welcome {
+  background-color: #6f42c1; /* Warna abu-abu muda */
+  color: #ffffff;
+}
+
 .welcome-container {
   display: flex;
   justify-content: center;
@@ -101,7 +182,7 @@ body.dark-mode .search-bar {
   background: #ffffff;
   padding: 3rem 4rem;
   border-radius: 20px;
-  box-shadow: 0 12px 24px rgba(0,0,0,.08);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 
@@ -128,12 +209,12 @@ body.dark-mode .search-bar {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .btn-login:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
@@ -146,10 +227,10 @@ body.dark-mode .search-bar {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.btn-welcome-btn-primary{
+.btn-welcome-btn-primary {
   display: inline-block;
   padding: 12px 36px;
   background-color: #6c5ce7;
@@ -159,13 +240,13 @@ body.dark-mode .search-bar {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform 0.15s, box-shadow 0.15s;
   text-decoration: none;
 }
 
 .btn-welcome-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .btn-welcome-btn-secondary {
@@ -178,18 +259,18 @@ body.dark-mode .search-bar {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform 0.15s, box-shadow 0.15s;
   text-decoration: none;
 }
 
 .btn-welcome-btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 form input,
@@ -234,7 +315,7 @@ form button:hover {
   padding: 30px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 3px 15px rgba(0,0,0.05);
+  box-shadow: 0 3px 15px rgba(0, 0, 0.05);
 }
 
 .form-container h2 {
@@ -293,19 +374,18 @@ form button:hover {
 }
 
 .produk-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .produk-card {
-    border: 1px solid #ccc;
-    padding: 10px;
-    width: 200px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  width: 200px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
-
 
 .nav-links {
   position: fixed;
@@ -313,11 +393,11 @@ form button:hover {
   left: -260px;
   width: 250px;
   height: 100vh;
-  
+
   /* PADDING YANG SUDAH DIPERBAIKI: */
   /* Atas: 80px, Kanan & Kiri: 25px, Bawah: 20px */
   padding: 70px 0px 0px 0px;
-  
+
   background-color: #6c5ce7;
   z-index: 1000;
   transition: left 0.35s ease-in-out;
@@ -419,13 +499,12 @@ footer.site-footer {
   text-align: center;
   padding: 20px 10px;
   border-top: 1px solid #ddd;
-  box-sizing: border-box; 
+  box-sizing: border-box;
   width: 100%;
   margin-top: auto; /* Ini kunci utamanya, akan mendorong footer ke bawah */
 }
 
 /* 3. Buat kelas baru untuk menampilkan footer */
-
 
 /* Gaya untuk dark-mode (ini bisa tetap sama) */
 body.dark-mode footer.site-footer {
@@ -451,113 +530,119 @@ body.dark-mode .footer-content {
   color: #ccc;
 }
 
-
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-html, body, .navbar, .brand, .nav-links a, .profile-dropdown {
+html,
+body,
+.navbar,
+.brand,
+.nav-links a,
+.profile-dropdown {
   transition: all 0.4s ease;
 }
 
 /* --- Bagian untuk Riwayat Pembelian (riwayat.html) --- */
 
 .dashboard-card {
-    background-color: white;
-    padding: 30px; /* Tambah padding agar lebih lega */
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    margin-bottom: 30px; /* Jarak antar card jika ada lebih dari satu */
+  background-color: white;
+  padding: 30px; /* Tambah padding agar lebih lega */
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px; /* Jarak antar card jika ada lebih dari satu */
 }
 
 .dashboard-card h2 {
-    color: #333;
-    margin-bottom: 25px;
-    text-align: center; /* Rata tengah judul */
-    font-size: 2em; /* Ukuran font lebih besar */
+  color: #333;
+  margin-bottom: 25px;
+  text-align: center; /* Rata tengah judul */
+  font-size: 2em; /* Ukuran font lebih besar */
 }
 
 /* Pesan Flash */
 .flashes {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 20px;
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
 }
 
 .flashes li {
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-    color: white;
+  padding: 12px 20px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: white;
 }
 
 .flashes .success {
-    background-color: #28a745; /* Hijau */
+  background-color: #28a745; /* Hijau */
 }
 
 .flashes .error {
-    background-color: #dc3545; /* Merah */
+  background-color: #dc3545; /* Merah */
 }
 
 .flashes .warning {
-    background-color: #ffc107; /* Kuning */
-    color: #333; /* Teks gelap untuk kontras */
+  background-color: #ffc107; /* Kuning */
+  color: #333; /* Teks gelap untuk kontras */
 }
 
 .flashes .info {
-    background-color: #17a2b8; /* Biru muda */
+  background-color: #17a2b8; /* Biru muda */
 }
 
-
 .transaction-list {
-    display: flex;
-    flex-direction: column; /* Susun item secara vertikal */
-    gap: 20px; /* Jarak antar setiap item transaksi */
+  display: flex;
+  flex-direction: column; /* Susun item secara vertikal */
+  gap: 20px; /* Jarak antar setiap item transaksi */
 }
 
 .transaction-item {
-    background-color: #f9f9f9; /* Latar belakang untuk setiap transaksi */
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column; /* Susun header dan details secara vertikal */
+  background-color: #f9f9f9; /* Latar belakang untuk setiap transaksi */
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column; /* Susun header dan details secara vertikal */
 }
 
 .item-header {
-    display: flex;
-    justify-content: space-between; /* Tanggal di kiri, status di kanan */
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #e0e0e0; /* Garis pemisah */
+  display: flex;
+  justify-content: space-between; /* Tanggal di kiri, status di kanan */
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #e0e0e0; /* Garis pemisah */
 }
 
 .transaction-date {
-    font-weight: bold;
-    color: #555;
-    font-size: 0.95em;
+  font-weight: bold;
+  color: #555;
+  font-size: 0.95em;
 }
 
 /* Icon dari Font Awesome jika digunakan */
 .fas {
-    margin-right: 8px;
-    color: #007bff; /* Warna ikon */
+  margin-right: 8px;
+  color: #007bff; /* Warna ikon */
 }
 
 .transaction-status {
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.8em;
-    font-weight: bold;
-    text-transform: uppercase; /* Huruf kapital */
-    color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase; /* Huruf kapital */
+  color: white;
 }
 
-.transaction-status.completed { /* Contoh status 'completed' */
-    background-color: #28a745; /* Hijau */
+.transaction-status.completed {
+  /* Contoh status 'completed' */
+  background-color: #28a745; /* Hijau */
 }
 /* Anda bisa tambahkan status lain jika ada, misal:
 .transaction-status.pending { background-color: #ffc107; }
@@ -565,183 +650,217 @@ html, body, .navbar, .brand, .nav-links a, .profile-dropdown {
 */
 
 .item-details {
-    display: flex;
-    align-items: center; /* Gambar dan info produk sejajar */
-    gap: 15px; /* Jarak antara gambar dan info produk */
+  display: flex;
+  align-items: center; /* Gambar dan info produk sejajar */
+  gap: 15px; /* Jarak antara gambar dan info produk */
 }
 
 .product-thumbnail {
-    width: 80px; /* Ukuran thumbnail */
-    height: 80px;
-    object-fit: cover; /* Pastikan gambar tidak pecah */
-    border-radius: 8px; /* Sudut membulat */
-    border: 1px solid #ddd;
+  width: 80px; /* Ukuran thumbnail */
+  height: 80px;
+  object-fit: cover; /* Pastikan gambar tidak pecah */
+  border-radius: 8px; /* Sudut membulat */
+  border: 1px solid #ddd;
 }
 
 .product-info {
-    flex-grow: 1; /* Agar info produk mengambil sisa ruang */
+  flex-grow: 1; /* Agar info produk mengambil sisa ruang */
 }
 
 .product-name {
-    font-size: 1.1em;
-    color: #333;
-    margin-bottom: 5px;
+  font-size: 1.1em;
+  color: #333;
+  margin-bottom: 5px;
 }
 
 .product-quantity {
-    font-size: 0.9em;
-    color: #777;
+  font-size: 0.9em;
+  color: #777;
 }
 
 .total-price {
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #007bff; /* Warna total harga */
-    margin-left: auto; /* Dorong ke kanan */
-    text-align: right;
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #007bff; /* Warna total harga */
+  margin-left: auto; /* Dorong ke kanan */
+  text-align: right;
 }
 
 .price-amount {
-    color: #333;
-    font-size: 1.1em; /* Ukuran sedikit lebih kecil dari label "Total" */
+  color: #333;
+  font-size: 1.1em; /* Ukuran sedikit lebih kecil dari label "Total" */
 }
 
 /* Tombol "Mulai Belanja" jika riwayat kosong */
 .btn-primary {
-    display: inline-block;
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 /* Responsif dasar */
 @media (max-width: 768px) {
-    .item-details {
-        flex-direction: column; /* Susun item details secara vertikal di layar kecil */
-        align-items: flex-start;
-    }
-    .total-price {
-        width: 100%; /* Total harga mengambil lebar penuh */
-        text-align: left; /* Rata kiri di layar kecil */
-        margin-top: 10px;
-    }
+  .item-details {
+    flex-direction: column; /* Susun item details secara vertikal di layar kecil */
+    align-items: flex-start;
+  }
+  .total-price {
+    width: 100%; /* Total harga mengambil lebar penuh */
+    text-align: left; /* Rata kiri di layar kecil */
+    margin-top: 10px;
+  }
 }
 
 /* ===== KODE UNTUK MODAL (PINDAHAN DARI CHECKOUT.HTML) ===== */
 
 .modal-overlay {
-    position: fixed;
-    z-index: 1050;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .modal-content {
-    background: white;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-header {
-    padding: 1rem;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .modal-body {
-    padding: 1rem;
+  padding: 1rem;
 }
 
 .close-button {
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .address-item {
-    padding: 0.75rem;
-    border: 1px solid #eee;
-    border-radius: 5px;
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* Class untuk menyembunyikan elemen */
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
 /* Tambahkan ini di file static/style.css Anda */
 
 /* Untuk tombol di dalam modal alamat */
 .btn-address-action {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .btn-address-action-delete {
-    background-color: #dc3545; /* Merah untuk tombol hapus */
+  background-color: #dc3545; /* Merah untuk tombol hapus */
 }
 
 /* Untuk tombol checkout utama */
 .btn-checkout {
-    background-color: #28a745; /* Hijau untuk tombol checkout */
-    color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 5px;
+  background-color: #28a745; /* Hijau untuk tombol checkout */
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
 }
 
 /* Untuk form kuantitas di keranjang */
 .cart-quantity-form {
-    display: inline-flex;
-    align-items: center;
+  display: inline-flex;
+  align-items: center;
 }
 .cart-quantity-input {
-    width: 60px;
-    text-align: center;
-    margin-right: 5px;
+  width: 60px;
+  text-align: center;
+  margin-right: 5px;
 }
 
 /* Untuk membuat semua item di modal bisa diklik */
 .clickable-item {
-    cursor: pointer;
+  cursor: pointer;
 }
 
-.progress-track { display: flex; justify-content: space-between; }
-.step { text-align: center; width: 24%; position: relative; }
-.step .icon { width: 40px; height: 40px; background: #ddd; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; color: white; }
-.step .text { margin-top: 5px; color: #ddd; }
-.step.active .icon { background: #28a745; }
-.step.active .text { color: #28a745; font-weight: bold; }
+.progress-track {
+  display: flex;
+  justify-content: space-between;
+}
+.step {
+  text-align: center;
+  width: 24%;
+  position: relative;
+}
+.step .icon {
+  width: 40px;
+  height: 40px;
+  background: #ddd;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+.step .text {
+  margin-top: 5px;
+  color: #ddd;
+}
+.step.active .icon {
+  background: #28a745;
+}
+.step.active .text {
+  color: #28a745;
+  font-weight: bold;
+}
 /* Garis penghubung */
-.step:not(:last-child)::before { content: ''; background: #ddd; height: 3px; width: calc(100% - 40px); position: absolute; top: 18px; left: calc(50% + 20px); }
-.step.active:not(:last-child)::before { background: #28a745; }
+.step:not(:last-child)::before {
+  content: "";
+  background: #ddd;
+  height: 3px;
+  width: calc(100% - 40px);
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 20px);
+}
+.step.active:not(:last-child)::before {
+  background: #28a745;
+}
 
 /* ===== STYLE UNTUK CHECKBOX CUSTOM ===== */
 
@@ -823,3 +942,163 @@ html, body, .navbar, .brand, .nav-links a, .profile-dropdown {
   -ms-transform: rotate(45deg);
   transform: rotate(45deg);
 }
+
+.chat-history {
+  padding: 15px;
+  height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wrapper untuk bubble dan tombol reply */
+.chat-bubble-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80%;
+}
+.from-other {
+  align-self: flex-start;
+}
+.from-me {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+/* Bubble chat utama */
+.chat-bubble {
+  padding: 10px 15px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+.from-other .chat-bubble {
+  background-color: #f1f0f0;
+}
+.from-me .chat-bubble {
+  background-color: #dcf8c6;
+}
+
+/* Tombol Reply Kecil */
+.btn-reply {
+  background: none;
+  border: none;
+  color: #aaa;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+.chat-bubble-wrapper:hover .btn-reply {
+  opacity: 1;
+}
+.btn-reply:hover {
+  background-color: #e9e9e9;
+}
+
+/* Konteks balasan di dalam bubble */
+.reply-context {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #0d6efd;
+}
+.reply-context p {
+  margin: 0;
+  font-style: italic;
+  color: #555;
+}
+
+/* Banner "Replying to..." di atas input */
+.reply-banner-hidden {
+  display: none !important;
+}
+#reply-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f0f0f0;
+  border-left: 4px solid #0d6efd;
+  border-radius: 4px;
+}
+#reply-banner-title,
+#reply-banner-content {
+  font-size: 0.9em;
+  margin: 0;
+}
+
+/* Link Produk di dalam chat */
+.chat-product-link {
+  display: block;
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 5px;
+  text-decoration: none;
+  color: inherit;
+}
+.chat-product-link:hover {
+  background-color: #f8f8f8;
+}
+
+/* Area Input Pesan Baru */
+.chat-input-area .form-control {
+  resize: none;
+  padding-right: 10px;
+  min-height: 40px;
+}
+.chat-input-area .btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.search-form {
+  display: flex;
+  margin-right: 20px;
+  align-content: center;
+  margin-top: 12px;
+}
+
+.search-form .form-control {
+  width: 250px;
+  height: 34px;
+
+  font-size: 14px;
+  border: 1px solid #ced4da;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  padding: 0 10px;
+}
+
+.search-form .form-control:focus {
+  box-shadow: none;
+  border-color: #86b7fe;
+}
+
+.search-form .btn {
+  height: 34px;
+  width: 45px;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 0 6px 6px 0;
+  color: #495057;
+  display: flex;           /* Kunci lain agar ikon di tengah */
+  justify-content: center; /* Ikon di tengah horizontal */
+  align-items: center; 
+}
+
+
+
+.search-form .btn:hover {
+    background-color: #e9ecef;
+}
+
