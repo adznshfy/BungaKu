@@ -9,65 +9,47 @@
 
     <div class="row">
         <div class="col-md-7">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">
-                    <h4>Detail Pengaduan #{{ complaint.id }}</h4>
+                    <h5>Pengaduan Awal: {{ complaint.subjek }}</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>Subjek:</strong><br>{{ complaint.subjek }}</p>
-
                     {% if complaint.id_transaksi %}
-                    <hr>
-                    <div>
-                        <strong>Terkait Pesanan:</strong>
-                            <p class="mb-0">ID Transaksi: #{{ complaint.id_transaksi }}</p>
-                            <p class="mb-0">Metode Pembayaran: {{ complaint.metode_pembayaran }}</p>
-                            <p class="mb-0">Total Harga: Rp {{ "{:,.0f}".format(complaint.total_harga) }}</p>
-                    </div>
+                    <p class="mb-0"><strong>Terkait Transaksi:</strong> #{{ complaint.id_transaksi }}</p>
                     {% endif %}
+                    <p class="mt-2"><strong>Dilaporkan oleh:</strong> {{ complaint.user_name }} ({{ complaint.peran_pelapor.capitalize() }})</p>
                     <hr>
-                    <div>
-                        <strong>Isi Pengaduan:</strong>
-                        <p class="card-text" style="white-space: pre-wrap; margin-top: 5px;">{{ complaint.isi_pengaduan }}</p>
-                    </div>
-                    <hr>
-                    <small class="text-muted">
-                        Dilaporkan oleh: <strong>{{ complaint.user_name }}</strong> ({{ complaint.peran_pelapor.capitalize() }})
-                        {% if complaint.peran_pelapor == 'penjual' and complaint.nama_toko %}
-                            <br>
-                            Toko: <strong>{{ complaint.nama_toko }}</strong>
-                        {% endif %}
-                        <br>
-                        Pada: {{ complaint.tanggal_lapor.strftime('%d %b %Y, %H:%M') }}
-                    </small>
+                    <p style="white-space: pre-wrap;">{{ complaint.isi_pengaduan }}</p>
+                    <small class="text-muted">Pada: {{ complaint.tanggal_lapor.strftime('%d %b %Y, %H:%M') }}</small>
                 </div>
+            </div>
+
+            <div class="chat-history">
+                <h5>Riwayat Percakapan</h5>
+                {% if tanggapan %}
+                    {% for t in tanggapan %}
+                    <div class="chat-bubble {% if t.peran_pengirim == 'pengelola' %}from-me{% else %}from-other{% endif %}">
+                        <strong>{{ t.nama_pengirim }} ({{ t.peran_pengirim.capitalize() }}):</strong>
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ t.isi_tanggapan }}</p>
+                        <small class="text-muted-custom">{{ t.tanggal_kirim.strftime('%d %b, %H:%M') }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Belum ada tanggapan dalam percakapan ini.</p>
+                {% endif %}
             </div>
         </div>
 
         <div class="col-md-5">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm" style="position: sticky; top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <h5>Tanggapan & Aksi</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('detail_pengaduan', complaint_id=complaint.id) }}">
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label font-weight-bold">Kirim Tanggapan Kepada:</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="tanggapan_untuk" id="kirimKePembeli" value="Pembeli" checked>
-                                    <label class="form-check-label" for="kirimKePembeli">Pembeli</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="tanggapan_untuk" id="kirimKePenjual" value="Penjual">
-                                    <label class="form-check-label" for="kirimKePenjual">Penjual</label>
-                                </div>
-                            </div>
-                        </div>
+                    <form method="POST">
                         <div class="mb-3">
-                            <label for="tanggapan" class="form-label fw-bold">Tulis Balasan:</label>
-                            <textarea name="tanggapan" id="tanggapan" rows="8" class="form-control" required>{{ complaint.tanggapan_pengelola or '' }}</textarea>
+                            <label for="tanggapan" class="form-label fw-bold">Tulis Balasan Baru:</label>
+                            <textarea name="tanggapan" id="tanggapan" rows="8" class="form-control" placeholder="Tulis balasan di sini... (kosongkan jika hanya ingin mengubah status)"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="status" class="form-label fw-bold">Ubah Status:</label>
@@ -79,12 +61,57 @@
                             </select>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Kirim Balasan & Update</button>
+                            <button type="submit" class="btn btn-primary">Kirim & Update Status</button>
                         </div>
                     </form>
+
+                    {% if id_penjual_terkait %}
+                    <hr>
+                    <div class="d-grid">
+                        <a href="{{ url_for('chat_internal', pengaduan_id=complaint.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-comments"></i> Chat dengan Penjual
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .chat-history { 
+        border: 1px solid #e0e0e0; 
+        padding: 15px; 
+        border-radius: 8px; 
+        max-height: 600px; 
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-bubble { 
+        padding: 10px 15px; 
+        border-radius: 20px; 
+        margin-bottom: 10px; 
+        max-width: 85%; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .from-other { 
+        background-color: #f1f0f0; 
+        align-self: flex-start; 
+        margin-right: auto;
+    }
+    .from-other .text-muted-custom {
+        color: #6c757d;
+    }
+    .from-me { 
+        background-color: #e0f0ff; 
+        align-self: flex-end;
+        margin-left: auto;
+    }
+    .from-me .text-muted-custom {
+        color: #555;
+    }
+</style>
 {% endblock %}

@@ -17,6 +17,8 @@ from io import StringIO, BytesIO
 from functools import wraps
 import csv
 from weasyprint import HTML
+import json
+from decimal import Decimal
 
 load_dotenv()
 
@@ -118,9 +120,9 @@ def login():
         password = request.form['password'].encode('utf-8')
 
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        # Query dengan JOIN untuk mengambil data dari users dan profile
+        # 1. PERUBAHAN: Tambahkan `u.is_active` pada query SELECT
         cur.execute("""
-            SELECT u.id_user, u.password, u.id_level, u.id_profile, p.nama, u.email
+            SELECT u.id_user, u.password, u.id_level, u.id_profile, p.nama, u.email, u.is_active
             FROM users u
             JOIN profile p ON u.id_profile = p.id_profile
             WHERE u.email = %s
@@ -128,28 +130,44 @@ def login():
         user = cur.fetchone()
         cur.close()
 
-        if user and bcrypt.checkpw(password, user['password'].encode('utf-8')):
-            session['id_user'] = user['id_user']
-            session['id_profile'] = user['id_profile']
-            session['id_level'] = user['id_level']
-            session['nama'] = user['nama']
-            session['email'] = user['email']
-
-            flash(f"Selamat datang kembali, {user['nama']}!", "success")
+        # 2. PERUBAHAN: Logika pengecekan diubah
+        if user:
+            # Cek pertama: Apakah akun user aktif?
+            # Kolom is_active di database bernilai 1 untuk aktif dan 0 untuk tidak aktif.
+            if user['is_active'] == 0:
+                # Jika tidak aktif, tampilkan pesan penangguhan.
+                error = "Akun anda sedang di tangguhkan"
             
-            id_level = user['id_level']
-            if id_level == 1: # Admin
-                return redirect(url_for('admin_dashboard'))
-            elif id_level == 2: # Pengelola
-                return redirect(url_for('dashboard_pengelola'))
-            elif id_level == 5: # Pemimpin
-                return redirect(url_for('dashboard_pimpinan'))
-            elif id_level == 3: # Penjual
-                return redirect(url_for('dashboard_penjual'))
-            else: # Pembeli (level 4) atau default
-                return redirect(url_for('home_buyer')) # Arahkan semua ke dashboard utama
+            # Cek kedua: Jika aktif, barulah periksa password.
+            elif bcrypt.checkpw(password, user['password'].encode('utf-8')):
+                # Jika password benar, lanjutkan proses login seperti biasa.
+                session['id_user'] = user['id_user']
+                session['id_profile'] = user['id_profile']
+                session['id_level'] = user['id_level']
+                session['nama'] = user['nama']
+                session['email'] = user['email']
+
+                flash(f"Selamat datang kembali, {user['nama']}!", "success")
+                
+                id_level = user['id_level']
+                if id_level == 1: # Admin
+                    return redirect(url_for('admin_dashboard'))
+                elif id_level == 2: # Pengelola
+                    return redirect(url_for('dashboard_pengelola'))
+                elif id_level == 5: # Pemimpin
+                    return redirect(url_for('dashboard_pimpinan'))
+                elif id_level == 3: # Penjual
+                    return redirect(url_for('dashboard_penjual'))
+                else: # Pembeli (level 4) atau default
+                    return redirect(url_for('home_buyer'))
+            else:
+                # Jika password salah untuk user yang aktif.
+                error = "Gagal login. Cek kembali email atau password Anda."
         else:
+            # Jika user dengan email tersebut tidak ditemukan.
             error = "Gagal login. Cek kembali email atau password Anda."
+            
+    # Render template dengan pesan error yang sesuai.
     return render_template("login.html", error=error)
 
 
@@ -351,6 +369,48 @@ def set_pin():
 
     return render_template('set_pin.html')
 
+@app.route('/ganti-password', methods=['GET', 'POST'])
+def ganti_password():
+    if 'id_user' not in session:
+        flash("Anda harus login untuk mengakses halaman ini.", "warning")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        old_password = request.form['old_password']
+        new_password = request.form['new_password']
+        confirm_new_password = request.form['confirm_new_password']
+
+        if new_password != confirm_new_password:
+            flash("Password baru dan konfirmasi password tidak cocok.", "error")
+            return redirect(url_for('ganti_password'))
+        
+        if len(new_password) < 6:
+            flash("Password baru minimal harus 6 karakter.", "error")
+            return redirect(url_for('ganti_password'))
+
+        user_id = session['id_user']
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute("SELECT password FROM users WHERE id_user = %s", (user_id,))
+        user = cur.fetchone()
+
+        if user and bcrypt.checkpw(old_password.encode('utf-8'), user['password'].encode('utf-8')):
+            new_hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+            
+            cur.execute("UPDATE users SET password = %s WHERE id_user = %s", 
+                        (new_hashed_password.decode('utf-8'), user_id))
+            mysql.connection.commit()
+            cur.close()
+            
+            flash("Password Anda berhasil diubah.", "success")
+            return redirect(url_for('profile')) # Arahkan kembali ke profil setelah sukses
+        else:
+            cur.close()
+            flash("Password lama yang Anda masukkan salah.", "error")
+            return redirect(url_for('ganti_password'))
+
+    # Jika metodenya GET, tampilkan halaman formulirnya
+    return render_template('ganti_password.html')
+
 # Ganti fungsi home_buyer yang lama dengan yang ini di app.py
 
 # Ganti seluruh fungsi home_buyer() Anda dengan kode ini
@@ -457,13 +517,29 @@ def dashboard_penjual():
             WHERE ti.id_transaksi = %s AND p.id_user = %s
         """, (pesanan['id_transaksi'], user_id))
         pesanan['detail_items'] = cur.fetchall()
+        
+        cur.execute("""
+        SELECT r.*, p.nama as nama_pembeli
+        FROM retur_barang r
+        JOIN users u ON r.id_pembeli = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE r.id_transaksi IN (
+            SELECT DISTINCT ti.id_transaksi
+            FROM transaksi_items ti
+            JOIN products pr ON ti.id_produk = pr.id
+            WHERE pr.id_user = %s
+        )
+        ORDER BY r.tanggal_ajuan DESC
+    """, (user_id,))
+    daftar_retur = cur.fetchall()
 
     cur.close()
 
     return render_template("dashboard_penjual.html", 
                            toko=toko_info, 
                            produk=daftar_produk, 
-                           pesanan_masuk=pesanan_masuk)
+                           pesanan_masuk=pesanan_masuk,
+                           daftar_retur=daftar_retur)
 
 @app.route('/edit-toko', methods=['GET'])
 def edit_toko():
@@ -911,6 +987,62 @@ def reply_to_rating(rating_id):
     cur.close()
     return redirect(url_for('product_detail', product_id=rating_info['id_produk']))
 
+@app.route('/update-status-retur/<int:retur_id>', methods=['POST'])
+def update_status_retur(retur_id):
+    # Keamanan dasar
+    if 'id_user' not in session or session.get('id_level') != 3:
+        flash("Aksi tidak diizinkan.", "error")
+        return redirect(url_for('home_buyer'))
+
+    action = request.form.get('action')
+    user_id = session['id_user']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Keamanan tambahan: Pastikan retur ini milik penjual yang sedang login
+    cur.execute("""
+        SELECT r.id_retur, r.id_transaksi FROM retur_barang r
+        JOIN transaksi_items ti ON r.id_transaksi = ti.id_transaksi
+        JOIN products p ON ti.id_produk = p.id
+        WHERE r.id_retur = %s AND p.id_user = %s
+        LIMIT 1
+    """, (retur_id, user_id))
+    retur = cur.fetchone()
+
+    if not retur:
+        flash("Retur tidak ditemukan atau Anda tidak memiliki izin.", "error")
+        cur.close()
+        return redirect(url_for('dashboard_penjual'))
+
+    # Logika berdasarkan aksi
+    if action == 'setujui':
+        cur.execute("UPDATE retur_barang SET status_retur = 'Disetujui' WHERE id_retur = %s", (retur_id,))
+        cur.execute("UPDATE transaksi SET status = 'retur_disetujui' WHERE id_transaksi = %s", (retur['id_transaksi'],))
+        flash("Permintaan retur telah disetujui.", "success")
+
+    elif action == 'tolak':
+        cur.execute("UPDATE retur_barang SET status_retur = 'Ditolak' WHERE id_retur = %s", (retur_id,))
+        # Langsung ubah status transaksi utama menjadi 'selesai'
+        cur.execute("UPDATE transaksi SET status = 'selesai' WHERE id_transaksi = %s", (retur['id_transaksi'],))
+        flash("Permintaan retur telah ditolak. Pesanan ini sekarang dianggap selesai.", "warning")
+
+    elif action == 'kirim_ulang':
+        nomor_resi_baru = request.form.get('nomor_resi_baru')
+        if not nomor_resi_baru:
+            flash("Nomor resi baru wajib diisi.", "error")
+            return redirect(url_for('dashboard_penjual'))
+        
+        cur.execute("""
+            UPDATE retur_barang 
+            SET status_retur = 'Dikirim Ulang', nomor_resi_baru = %s, tanggal_kirim_ulang = NOW() 
+            WHERE id_retur = %s
+        """, (nomor_resi_baru, retur_id))
+        flash("Informasi pengiriman ulang berhasil disimpan.", "success")
+
+    mysql.connection.commit()
+    cur.close()
+    return redirect(url_for('dashboard_penjual'))
+
 @app.route('/toko/<string:shop_username>')
 def shop_detail(shop_username):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1005,13 +1137,29 @@ def riwayat():
     user_id = session['id_user']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     try:
-        cur.execute("SELECT * FROM transaksi WHERE id_user = %s ORDER BY tanggal_pesanan DESC", (user_id,))
+        # Query utama yang sudah diperbaiki dengan subquery EXISTS
+        cur.execute("""
+            SELECT 
+                t.*,
+                r.status_retur,
+                r.id_retur,
+                (EXISTS (
+                    SELECT 1 FROM product_ratings pr 
+                    WHERE pr.id_user = t.id_user 
+                    AND pr.id_produk IN (SELECT ti.id_produk FROM transaksi_items ti WHERE ti.id_transaksi = t.id_transaksi)
+                )) AS has_rated
+            FROM transaksi t
+            LEFT JOIN retur_barang r ON t.id_transaksi = r.id_transaksi
+            WHERE t.id_user = %s 
+            ORDER BY t.tanggal_pesanan DESC
+        """, (user_id,))
         orders = cur.fetchall()
 
+        # Loop untuk mengambil detail item per pesanan
         for order in orders:
             cur.execute("""
                 SELECT 
-                    ti.kuantitas, ti.harga_saat_beli,
+                    ti.kuantitas, ti.harga_saat_beli, ti.id_produk,
                     p.name as product_name,
                     (SELECT nama_file_gambar FROM product_images WHERE id_produk = ti.id_produk ORDER BY id ASC LIMIT 1) as product_image
                 FROM transaksi_items ti
@@ -1019,7 +1167,6 @@ def riwayat():
                 WHERE ti.id_transaksi = %s
             """, (order['id_transaksi'],))
             
-            # Menggunakan nama baru 'detail_items'
             order['detail_items'] = cur.fetchall()
 
         return render_template("riwayat.html", orders=orders)
@@ -1027,43 +1174,51 @@ def riwayat():
     except Exception as e:
         print(f"ERROR DI FUNGSI RIWAYAT: {e}")
         flash("Terjadi kesalahan saat memuat riwayat.", "error")
-        return redirect(url_for('home_buyer'))
+        return redirect(request.referrer or url_for('home_buyer'))
     finally:
         cur.close()
         
 @app.route('/filter-riwayat/<status>')
 def filter_riwayat(status):
-    # Keamanan, pastikan user sudah login
     if 'id_user' not in session:
-        # Untuk AJAX request, lebih baik mengembalikan error daripada redirect
         return jsonify({'error': 'Unauthorized'}), 401
 
     user_id = session['id_user']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Siapkan query dasar
+    # Siapkan query dasar yang sama dengan fungsi riwayat() utama
     query = """
-        SELECT * FROM transaksi 
-        WHERE id_user = %s
+        SELECT 
+            t.*,
+            r.status_retur,
+            r.id_retur,
+            (EXISTS (
+                SELECT 1 FROM product_ratings pr 
+                WHERE pr.id_user = t.id_user 
+                AND pr.id_produk IN (SELECT ti.id_produk FROM transaksi_items ti WHERE ti.id_transaksi = t.id_transaksi)
+            )) AS has_rated
+        FROM transaksi t
+        LEFT JOIN retur_barang r ON t.id_transaksi = r.id_transaksi
+        WHERE t.id_user = %s
     """
     params = [user_id]
 
-    # Jika statusnya BUKAN 'semua', tambahkan filter status ke query
-    if status != 'semua':
-        query += " AND status = %s"
+    if status == 'diretur':
+        query += " AND t.status IN ('mengajukan_retur', 'retur_disetujui', 'retur_ditolak', 'retur_selesai')"
+    elif status != 'semua':
+        query += " AND t.status = %s"
         params.append(status)
     
-    # Tambahkan urutan
-    query += " ORDER BY tanggal_pesanan DESC"
+    query += " ORDER BY t.tanggal_pesanan DESC"
 
     cur.execute(query, tuple(params))
     orders = cur.fetchall()
 
-    # Ambil detail item untuk setiap order (logika ini sama seperti di fungsi riwayat utama)
+    # Ambil detail item untuk setiap pesanan (logika ini tidak berubah)
     for order in orders:
         cur.execute("""
             SELECT 
-                ti.kuantitas, ti.harga_saat_beli,
+                ti.kuantitas, ti.harga_saat_beli, ti.id_produk,
                 p.name as product_name,
                 (SELECT nama_file_gambar FROM product_images WHERE id_produk = ti.id_produk ORDER BY id ASC LIMIT 1) as product_image
             FROM transaksi_items ti
@@ -1074,7 +1229,7 @@ def filter_riwayat(status):
     
     cur.close()
 
-    # Render HANYA template potongan, bukan layout penuh
+    # Render template potongan '_riwayat_list.html' dengan data yang sudah difilter
     return render_template('_riwayat_list.html', orders=orders)
 
 @app.route("/produk")
@@ -1385,7 +1540,41 @@ def apply_voucher():
     else:
         return jsonify({'success': False, 'message': 'Voucher tidak valid atau sudah kadaluarsa.'})
 
-# GANTI SELURUH FUNGSI PEMBAYARAN ANDA DENGAN INI
+@app.route('/detail-transaksi-penjual/<int:transaksi_id>')
+def detail_transaksi_penjual(transaksi_id):
+    # Keamanan: Pastikan yang login adalah penjual atau pengelola
+    if 'id_user' not in session or session.get('id_level') not in [2, 3]:
+        flash("Aksi tidak diizinkan.", "error")
+        return redirect(url_for('home_buyer'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Ambil detail transaksi utama dan data pembeli
+    cur.execute("""
+        SELECT t.*, p.nama as nama_pembeli, p.no_telp, p.alamat
+        FROM transaksi t
+        JOIN users u ON t.id_user = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE t.id_transaksi = %s
+    """, (transaksi_id,))
+    transaksi = cur.fetchone()
+
+    if not transaksi:
+        flash("Transaksi tidak ditemukan.", "error")
+        cur.close()
+        return redirect(url_for('dashboard_penjual'))
+
+    # Ambil detail item dalam transaksi tersebut
+    cur.execute("""
+        SELECT ti.*, p.name as product_name
+        FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id
+        WHERE ti.id_transaksi = %s
+    """, (transaksi_id,))
+    transaksi['items'] = cur.fetchall()
+    cur.close()
+
+    return render_template('detail_transaksi_penjual.html', transaksi=transaksi)
 
 @app.route('/pembayaran/<int:transaksi_id>')
 def pembayaran(transaksi_id):
@@ -1453,8 +1642,6 @@ def proses_pembayaran(transaksi_id):
 # Tambahkan fungsi baru ini di app.py
 @app.route('/pembayaran-berhasil/<int:transaksi_id>')
 def pembayaran_berhasil(transaksi_id):
-    # Kita hanya perlu menampilkan halaman sederhana
-    # transaksi_id bisa digunakan jika Anda ingin menampilkan nomor pesanan di halaman ini
     return render_template('pembayaran_berhasil.html', transaksi_id=transaksi_id)
 
 # GANTI SELURUH FUNGSI confirm_purchase() ANDA DENGAN INI
@@ -1546,6 +1733,78 @@ def terima_pesanan(transaksi_id):
     # Arahkan ke halaman pemberian rating
     return redirect(url_for('beri_rating', transaksi_id=transaksi_id))
 
+@app.route('/ajukan-retur/<int:transaksi_id>', methods=['GET', 'POST'])
+def ajukan_retur(transaksi_id):
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Ambil data transaksi untuk memastikan milik user dan statusnya 'dikirim'
+    cur.execute("""
+        SELECT * FROM transaksi WHERE id_transaksi = %s AND id_user = %s AND status = 'dikirim'
+    """, (transaksi_id, user_id))
+    transaksi = cur.fetchone()
+
+    if not transaksi:
+        flash("Transaksi tidak ditemukan atau tidak dapat diretur.", "error")
+        cur.close()
+        return redirect(url_for('riwayat'))
+
+    if request.method == 'POST':
+        item_ids_diretur = request.form.getlist('items_diretur')
+        alasan = request.form['alasan_retur']
+
+        if not item_ids_diretur:
+            flash("Pilih minimal satu item untuk diretur.", "error")
+            return redirect(url_for('ajukan_retur', transaksi_id=transaksi_id))
+
+        # Ambil detail item yang dipilih untuk disimpan sebagai JSON
+        cur.execute(f"""
+            SELECT id_produk, kuantitas, harga_saat_beli, p.name as product_name 
+            FROM transaksi_items ti JOIN products p ON ti.id_produk = p.id 
+            WHERE id_transaksi = %s AND ti.id_produk IN ({','.join(['%s'] * len(item_ids_diretur))})
+        """, (transaksi_id, *item_ids_diretur))
+        items_detail = cur.fetchall()
+        
+        # --- PERBAIKAN DIMULAI DI SINI ---
+        # Loop melalui setiap item dan konversi nilai Decimal ke float
+        for item in items_detail:
+            if 'harga_saat_beli' in item and isinstance(item['harga_saat_beli'], Decimal):
+                item['harga_saat_beli'] = float(item['harga_saat_beli'])
+        # --- AKHIR PERBAIKAN ---
+
+        # Sekarang, items_detail aman untuk di-serialize
+        items_json = json.dumps(items_detail)
+
+        # Buat entri baru di tabel retur_barang
+        cur.execute("""
+            INSERT INTO retur_barang (id_transaksi, id_pembeli, alasan_retur, item_diretur)
+            VALUES (%s, %s, %s, %s)
+        """, (transaksi_id, user_id, alasan, items_json))
+
+        # Update status transaksi utama menjadi 'mengajukan_retur'
+        cur.execute("UPDATE transaksi SET status = 'mengajukan_retur' WHERE id_transaksi = %s", (transaksi_id,))
+        
+        mysql.connection.commit()
+        cur.close()
+        
+        flash("Pengajuan retur Anda telah berhasil dikirim dan akan segera diproses oleh penjual.", "success")
+        return redirect(url_for('riwayat'))
+
+    # Untuk GET request, ambil detail item dari transaksi untuk ditampilkan di form
+    cur.execute("""
+        SELECT ti.id_produk, ti.kuantitas, p.name as product_name
+        FROM transaksi_items ti
+        JOIN products p ON ti.id_produk = p.id
+        WHERE ti.id_transaksi = %s
+    """, (transaksi_id,))
+    transaksi['detail_items'] = cur.fetchall()
+    cur.close()
+    
+    return render_template('form_retur.html', transaksi=transaksi)
+
 # Fungsi untuk MENAMPILKAN halaman rating
 @app.route('/beri-rating/<int:transaksi_id>', methods=['GET'])
 def beri_rating(transaksi_id):
@@ -1606,6 +1865,33 @@ def simpan_rating(transaksi_id):
         flash(f"Terjadi kesalahan saat menyimpan ulasan: {e}", "error")
         print(f"Error simpan_rating: {e}") # Untuk debug
 
+    return redirect(url_for('riwayat'))
+
+@app.route('/terima-barang-retur/<int:retur_id>', methods=['POST'])
+def terima_barang_retur(retur_id):
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Keamanan: Pastikan retur ini milik user yang sedang login
+    cur.execute("SELECT id_transaksi FROM retur_barang WHERE id_retur = %s AND id_pembeli = %s", (retur_id, user_id))
+    retur = cur.fetchone()
+
+    if not retur:
+        flash("Aksi tidak diizinkan.", "error")
+        cur.close()
+        return redirect(url_for('riwayat'))
+    
+    # Update status di tabel retur dan transaksi
+    cur.execute("UPDATE retur_barang SET status_retur = 'Selesai' WHERE id_retur = %s", (retur_id,))
+    cur.execute("UPDATE transaksi SET status = 'retur_selesai' WHERE id_transaksi = %s", (retur['id_transaksi'],))
+    
+    mysql.connection.commit()
+    cur.close()
+    
+    flash("Terima kasih telah mengonfirmasi. Proses retur telah selesai.", "success")
     return redirect(url_for('riwayat'))
 
 @app.route('/admin/dashboard')
@@ -1823,27 +2109,39 @@ def dashboard_pengelola():
     
     return render_template('dashboard_pengelola.html', complaints=daftar_pengaduan)
 
+# GANTI TOTAL FUNGSI detail_pengaduan ANDA DENGAN YANG INI
 @app.route('/pengaduan/<int:complaint_id>', methods=['GET', 'POST'])
 def detail_pengaduan(complaint_id):
+    # Penjaga keamanan: Pastikan yang login adalah pengelola (level 2)
     if 'id_user' not in session or session.get('id_level') != 2:
         flash("Halaman ini hanya untuk Pengelola.", "error")
         return redirect(url_for('login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    # --- Bagian untuk memproses form (POST) ---
     if request.method == 'POST':
-        tanggapan = request.form['tanggapan']
-        status_baru = request.form['status']
-        cur.execute("""
-            UPDATE pengaduan 
-            SET tanggapan_pengelola = %s, status = %s, tanggal_tanggapan = NOW()
-            WHERE id = %s
-        """, (tanggapan, status_baru, complaint_id))
-        mysql.connection.commit()
-        flash("Balasan berhasil dikirim dan status telah diperbarui.", "success")
-        cur.close()
-        return redirect(url_for('dashboard_pengelola'))
+        # Ambil data dari form yang dikirim
+        tanggapan_baru = request.form.get('tanggapan')
+        status_baru = request.form.get('status')
 
+        # 1. Jika ada isi balasan, simpan ke tabel tanggapan_pengaduan
+        if tanggapan_baru:
+            cur.execute("""
+                INSERT INTO tanggapan_pengaduan (id_pengaduan, id_pengirim, peran_pengirim, isi_tanggapan)
+                VALUES (%s, %s, 'pengelola', %s)
+            """, (complaint_id, session['id_user'], tanggapan_baru))
+        
+        # 2. Selalu update status di tabel pengaduan utama
+        cur.execute("UPDATE pengaduan SET status = %s WHERE id = %s", (status_baru, complaint_id))
+        
+        mysql.connection.commit()
+        flash("Aksi berhasil disimpan dan tanggapan telah dikirim.", "success")
+        cur.close()
+        return redirect(url_for('detail_pengaduan', complaint_id=complaint_id))
+
+    # --- Bagian untuk menampilkan halaman (GET) ---
+    # 1. Ambil detail pengaduan utama
     cur.execute("""
         SELECT 
             aduan.*, 
@@ -1859,15 +2157,94 @@ def detail_pengaduan(complaint_id):
         WHERE aduan.id = %s
     """, (complaint_id,))
     complaint = cur.fetchone()
-    cur.close()
 
     if not complaint:
         flash("Pengaduan tidak ditemukan.", "error")
+        cur.close()
         return redirect(url_for('dashboard_pengelola'))
+    
+    id_penjual_terkait = None
+    if complaint.get('id_transaksi'):
+        # Cari penjual berdasarkan produk di dalam transaksi
+        cur.execute("""
+            SELECT p.id_user FROM products p
+            JOIN transaksi_items ti ON p.id = ti.id_produk
+            WHERE ti.id_transaksi = %s
+            LIMIT 1
+        """, (complaint['id_transaksi'],))
+        penjual = cur.fetchone()
+        if penjual:
+            id_penjual_terkait = penjual['id_user']
 
-    return render_template('detail_pengaduan.html', complaint=complaint)
+    # 2. Ambil SEMUA riwayat percakapan untuk pengaduan ini
+    cur.execute("""
+        SELECT t.*, p.nama as nama_pengirim
+        FROM tanggapan_pengaduan t
+        JOIN users u ON t.id_pengirim = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE t.id_pengaduan = %s 
+        ORDER BY t.tanggal_kirim ASC
+    """, (complaint_id,))
+    riwayat_tanggapan = cur.fetchall()
+    cur.close()
+
+    # 3. Kirim data pengaduan dan riwayat tanggapan ke template
+    return render_template('detail_pengaduan.html', complaint=complaint, tanggapan=riwayat_tanggapan, id_penjual_terkait=id_penjual_terkait)
         
-# Tambahkan fungsi baru ini di dalam file app.py
+@app.route('/chat-internal/<int:pengaduan_id>', methods=['GET', 'POST'])
+def chat_internal(pengaduan_id):
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # --- QUERY YANG DIPERBAIKI ADA DI SINI ---
+    # Query ini sekarang secara akurat mencari ID penjual terkait pengaduan
+    cur.execute("""
+        SELECT 
+            pgn.id, 
+            pgn.subjek,
+            pgn.id_transaksi,
+            (SELECT p.id_user 
+             FROM products p 
+             JOIN transaksi_items ti ON p.id = ti.id_produk 
+             WHERE ti.id_transaksi = pgn.id_transaksi 
+             LIMIT 1) AS id_penjual
+        FROM pengaduan pgn
+        WHERE pgn.id = %s
+    """, (pengaduan_id,))
+    pengaduan_info = cur.fetchone()
+
+    # Keamanan: Hanya pengelola (level 2) atau penjual terkait yang bisa masuk
+    # Dengan query yang benar, pengecekan ini akan berfungsi
+    if not pengaduan_info or (session.get('id_level') != 2 and user_id != pengaduan_info.get('id_penjual')):
+        flash("Anda tidak memiliki akses ke percakapan ini.", "error")
+        cur.close()
+        return redirect(url_for('home_buyer'))
+
+    if request.method == 'POST':
+        isi_pesan = request.form.get('isi_pesan')
+        if isi_pesan:
+            peran = 'pengelola' if session.get('id_level') == 2 else 'penjual'
+            cur.execute("""
+                INSERT INTO chat_internal (id_pengaduan, id_pengirim, peran_pengirim, isi_pesan)
+                VALUES (%s, %s, %s, %s)
+            """, (pengaduan_id, user_id, peran, isi_pesan))
+            mysql.connection.commit()
+        return redirect(url_for('chat_internal', pengaduan_id=pengaduan_id))
+
+    # Ambil riwayat chat internal (logika ini tidak berubah)
+    cur.execute("""
+        SELECT ci.*, p.nama as nama_pengirim FROM chat_internal ci
+        JOIN users u ON ci.id_pengirim = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE ci.id_pengaduan = %s ORDER BY ci.tanggal_kirim ASC
+    """, (pengaduan_id,))
+    daftar_chat = cur.fetchall()
+    cur.close()
+    
+    return render_template('chat_internal.html', pengaduan=pengaduan_info, daftar_chat=daftar_chat)
 
 @app.route('/kirim-pengaduan', methods=['GET', 'POST'])
 def kirim_pengaduan():
@@ -1896,6 +2273,93 @@ def kirim_pengaduan():
         return redirect(url_for('home_buyer'))
 
     return render_template('kirim_pengaduan.html', id_transaksi=id_transaksi)
+
+# Tambahkan 2 fungsi baru ini di app.py
+
+@app.route('/riwayat-pengaduan')
+def riwayat_pengaduan():
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    user_level = session.get('id_level')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # --- LOGIKA BARU DENGAN PERCABANGAN BERDASARKAN PERAN ---
+    if user_level == 3:
+        cur.execute("""
+            SELECT DISTINCT pgn.id, pgn.subjek, pgn.status, pgn.tanggal_lapor 
+            FROM pengaduan pgn
+            WHERE 
+                pgn.id_pelapor = %s 
+                OR pgn.id_transaksi IN (
+                    SELECT DISTINCT ti.id_transaksi
+                    FROM transaksi_items ti
+                    JOIN products p ON ti.id_produk = p.id
+                    WHERE p.id_user = %s
+                )
+            ORDER BY pgn.tanggal_lapor DESC
+        """, (user_id, user_id)) # Perhatikan: user_id digunakan dua kali
+    else: # Jika yang login adalah Pembeli (atau peran lain)
+        # Gunakan query sederhana yang lama
+        cur.execute("""
+            SELECT id, subjek, status, tanggal_lapor 
+            FROM pengaduan 
+            WHERE id_pelapor = %s 
+            ORDER BY tanggal_lapor DESC
+        """, (user_id,))
+
+    daftar_pengaduan = cur.fetchall()
+    cur.close()
+    
+    # Template yang digunakan tetap sama
+    return render_template('riwayat_pengaduan.html', complaints=daftar_pengaduan)
+
+@app.route('/detail-pengaduan-user/<int:pengaduan_id>', methods=['GET', 'POST'])
+def detail_pengaduan_user(pengaduan_id):
+    if 'id_user' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id_user']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Ambil detail pengaduan utama, pastikan ini milik user yg login
+    cur.execute("SELECT * FROM pengaduan WHERE id = %s AND id_pelapor = %s", (pengaduan_id, user_id))
+    pengaduan = cur.fetchone()
+
+    if not pengaduan:
+        flash("Pengaduan tidak ditemukan atau Anda tidak memiliki akses.", "error")
+        cur.close()
+        return redirect(url_for('riwayat_pengaduan'))
+
+    if request.method == 'POST':
+        isi_balasan = request.form.get('isi_balasan')
+        if isi_balasan:
+            peran = 'penjual' if session.get('id_level') == 3 else 'pembeli'
+            cur.execute("""
+                INSERT INTO tanggapan_pengaduan (id_pengaduan, id_pengirim, peran_pengirim, isi_tanggapan)
+                VALUES (%s, %s, %s, %s)
+            """, (pengaduan_id, user_id, peran, isi_balasan))
+            # Ubah status menjadi 'Diproses' setiap kali user membalas
+            cur.execute("UPDATE pengaduan SET status = 'Diproses' WHERE id = %s", (pengaduan_id,))
+            mysql.connection.commit()
+            flash("Balasan Anda telah terkirim.", "success")
+        cur.close()
+        return redirect(url_for('detail_pengaduan_user', pengaduan_id=pengaduan_id))
+
+    # Ambil seluruh riwayat percakapan untuk pengaduan ini
+    cur.execute("""
+        SELECT t.*, p.nama as nama_pengirim
+        FROM tanggapan_pengaduan t
+        JOIN users u ON t.id_pengirim = u.id_user
+        JOIN profile p ON u.id_profile = p.id_profile
+        WHERE t.id_pengaduan = %s 
+        ORDER BY t.tanggal_kirim ASC
+    """, (pengaduan_id,))
+    riwayat_tanggapan = cur.fetchall()
+    cur.close()
+    
+    return render_template('detail_pengaduan_user.html', pengaduan=pengaduan, tanggapan=riwayat_tanggapan)
 
 # Ganti/tambahkan fungsi dashboard pimpinan Anda dengan yang ini
 @app.route('/dashboard-pimpinan')

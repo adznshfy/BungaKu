@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block title %}Formulir Pengajuan Retur{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>Ajukan Retur untuk Pesanan #{{ transaksi.id_transaksi }}</h2>
+    <p>Pilih item yang ingin Anda kembalikan dan jelaskan alasannya.</p>
+    <hr>
+    <form method="POST">
+        <div class="mb-4">
+            <h5>Pilih Item yang Akan Diretur:</h5>
+            {% for item in transaksi.detail_items %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="items_diretur" value="{{ item.id_produk }}" id="item_{{ item.id_produk }}">
+                <label class="form-check-label" for="item_{{ item.id_produk }}">
+                    {{ item.kuantitas }}x {{ item.product_name }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            <label for="alasan_retur" class="form-label"><strong>Alasan Retur:</strong></label>
+            <textarea name="alasan_retur" id="alasan_retur" rows="5" class="form-control" placeholder="Contoh: Barang tidak sesuai deskripsi, ukuran salah, barang rusak." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Kirim Pengajuan Retur</button>
+        <a href="{{ url_for('riwayat') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
+{% endblock %}

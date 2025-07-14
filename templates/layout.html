@@ -1,139 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %} - Toko Bunga Indah</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </head>
 
-<body>
+  <body>
     <nav class="navbar">
-        <div class="nav-left">
-            <button id="navToggle" class="toggle-button">☰</button>
-            <span class="brand">
-                <img class="logo" src="../static/images/logo.png"> BungaKu
-            </span>
+      <div class="nav-left">
+        <button id="navToggle" class="toggle-button">☰</button>
+        <span class="brand">
+          <img class="logo" src="../static/images/logo.png" /> BungaKu
+        </span>
+      </div>
+      <div class="nav-right">
+        <div class="profile-menu">
+          <img
+            id="profileIcon"
+            src="{{ url_for('static', filename='../static/images/default_profile.png') }}"
+            alt="Profile"
+            class="profile-icon"
+          />
+          <div id="profileDropdown" class="dropdown-menu">
+            <a href="{{ url_for('profile') }}">Edit Profil</a>
+            <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+            <a href="{{ url_for('logout') }}">Keluar</a>
+          </div>
         </div>
-        <div class="nav-right">
-            <div class="profile-menu">
-                <img id="profileIcon" src="{{ url_for('static', filename='../static/images/default_profile.png') }}"
-                    alt="Profile" class="profile-icon">
-                <div id="profileDropdown" class="dropdown-menu">
-                    <a href="{{ url_for('profile') }}">Edit Profil</a>
-                    <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
-                    <a href="{{ url_for('logout') }}">Keluar</a>
-                </div>
-            </div>
-        </div>
+      </div>
     </nav>
 
     <div class="nav-links" id="navLinks">
-    {% if 'id_user' not in session %}
-        <a href="{{ url_for('welcome') }}">Welcome</a>
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}">Register</a>
+      {% if 'id_user' not in session %}
+      <a href="{{ url_for('welcome') }}">Welcome</a>
+      <a href="{{ url_for('login') }}">Login</a>
+      <a href="{{ url_for('register') }}">Register</a>
 
-    {% elif session.get('id_level') in [3, 4] %}
-        <a href="{{ url_for('home_buyer') }}">Home</a>
-        <a href="{{ url_for('profile') }}">Profil</a>
-        <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
-        <a href="{{ url_for('cart') }}">Keranjang</a>
-        <a href="{{ url_for('kirim_pengaduan') }}">Lapor/Pengaduan</a>
-        {% if session.get('id_level') == 3 %}
-            <a href="{{ url_for('dashboard_penjual') }}">Dashboard Penjual</a>
-        {% endif %}
-        <a href="{{ url_for('logout') }}">Keluar</a>
-
-    {% else %}
-        {% if session.get('id_level') == 1 %}
-            <a href="{{ url_for('dashboard_admin') }}">Dashboard Admin</a>
-        {% elif session.get('id_level') == 2 %}
-            <a href="{{ url_for('dashboard_pengelola') }}">Dashboard Pengelola</a>
-        {% elif session.get('id_level') == 5 %}
-            <a href="{{ url_for('dashboard_pimpinan') }}">Dashboard Pemimpin</a>
-        {% endif %}
-        <a href="{{ url_for('logout') }}">Keluar</a>
+      {% elif session.get('id_level') in [3, 4] %}
+    <a href="{{ url_for('home_buyer') }}">Home</a>
+    <a href="{{ url_for('profile') }}">Profil</a>
+    <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
+    <a href="{{ url_for('cart') }}">Keranjang</a>
+    <a href="{{ url_for('kirim_pengaduan') }}">Lapor/Pengaduan</a>
+    <a href="{{ url_for('riwayat_pengaduan') }}">Riwayat Pengaduan</a>  {% if session.get('id_level') == 3 %}
+        <a href="{{ url_for('dashboard_penjual') }}">Dashboard Penjual</a>
     {% endif %}
-</div>
+    <a href="{{ url_for('logout') }}">Keluar</a>
+
+      {% else %} {% if session.get('id_level') == 1 %}
+      <a href="{{ url_for('dashboard_admin') }}">Dashboard Admin</a>
+      {% elif session.get('id_level') == 2 %}
+      <a href="{{ url_for('dashboard_pengelola') }}">Dashboard Pengelola</a>
+      {% elif session.get('id_level') == 5 %}
+      <a href="{{ url_for('dashboard_pimpinan') }}">Dashboard Pemimpin</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}">Keluar</a>
+      {% endif %}
+    </div>
 
     <main class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        {% for category, message in messages %}
+                            Swal.fire({
+                                title: '{{ category.title() }}!',
+                                text: '{{ message }}',
+                                icon: '{{ category }}',
+                                confirmButtonText: 'Oke'
+                            });
+                        {% endfor %}
+                    });
+                </script>
+            {% endif %}
         {% endwith %}
+        
         {% block content %}{% endblock %}
     </main>
 
     <footer class="site-footer">
-        <div class="footer-content">
-            <strong>BungaKu</strong> — Setiap bunga punya cerita 💐
-            <br>
-            Contact: bungaku@gmail.com - © 2025
-        </div>
+      <div class="footer-content">
+        <strong>BungaKu</strong> — Setiap bunga punya cerita 💐
+        <br />
+        Contact: bungaku@gmail.com - © 2025
+      </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Script untuk toggle navigasi samping dan dropdown profil
-        const navToggle = document.getElementById("navToggle"); // Tombol buka
-        const navClose = document.getElementById("navClose");   // Tombol tutup
-        const navLinks = document.getElementById("navLinks");
-        const profileIcon = document.getElementById("profileIcon");
-        const profileDropdown = document.getElementById("profileDropdown");
+      // Script untuk toggle navigasi samping dan dropdown profil
+      const navToggle = document.getElementById("navToggle"); // Tombol buka
+      const navClose = document.getElementById("navClose"); // Tombol tutup
+      const navLinks = document.getElementById("navLinks");
+      const profileIcon = document.getElementById("profileIcon");
+      const profileDropdown = document.getElementById("profileDropdown");
 
-        if (navToggle) {
-            navToggle.addEventListener("click", () => {
-                navLinks.classList.add("active"); // Tampilkan menu
-            });
-        }
-
-        if (navClose) {
-            navClose.addEventListener("click", () => {
-                navLinks.classList.remove("active"); // Sembunyikan menu
-            });
-        }
-
-        if (profileIcon) {
-            profileIcon.addEventListener("click", (e) => {
-                e.stopPropagation();
-                profileDropdown.style.display =
-                    profileDropdown.style.display === "flex" ? "none" : "flex";
-            });
-        }
-
-        window.addEventListener("click", (e) => {
-            if (profileDropdown && !profileDropdown.contains(e.target) && e.target !== profileIcon) {
-                profileDropdown.style.display = "none";
-            }
+      if (navToggle) {
+        navToggle.addEventListener("click", () => {
+          navLinks.classList.add("active"); // Tampilkan menu
         });
+      }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const footer = document.querySelector('.site-footer');
-            if (!footer) return;
-
-            const toggleFooterVisibility = () => {
-                const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2;
-
-                if (isAtBottom) {
-                    footer.classList.add('visible');
-                } else {
-                    footer.classList.remove('visible');
-                }
-            };
-
-            window.addEventListener('scroll', toggleFooterVisibility);
-            toggleFooterVisibility();
+      if (navClose) {
+        navClose.addEventListener("click", () => {
+          navLinks.classList.remove("active"); // Sembunyikan menu
         });
+      }
+
+      if (profileIcon) {
+        profileIcon.addEventListener("click", (e) => {
+          e.stopPropagation();
+          profileDropdown.style.display =
+            profileDropdown.style.display === "flex" ? "none" : "flex";
+        });
+      }
+
+      window.addEventListener("click", (e) => {
+        if (
+          profileDropdown &&
+          !profileDropdown.contains(e.target) &&
+          e.target !== profileIcon
+        ) {
+          profileDropdown.style.display = "none";
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const footer = document.querySelector(".site-footer");
+        if (!footer) return;
+
+        const toggleFooterVisibility = () => {
+          const isAtBottom =
+            window.innerHeight + window.scrollY >=
+            document.body.offsetHeight - 2;
+
+          if (isAtBottom) {
+            footer.classList.add("visible");
+          } else {
+            footer.classList.remove("visible");
+          }
+        };
+
+        window.addEventListener("scroll", toggleFooterVisibility);
+        toggleFooterVisibility();
+      });
     </script>
-</body>
-
+  </body>
 </html>

@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block title %}Detail Pengaduan #{{ pengaduan.id }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <a href="{{ url_for('riwayat_pengaduan') }}" class="btn btn-secondary mb-3">&laquo; Kembali ke Riwayat</a>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h4>Pengaduan: {{ pengaduan.subjek }}</h4>
+            <span>Status: <strong>{{ pengaduan.status }}</strong></span>
+        </div>
+        <div class="card-body">
+            <p style="white-space: pre-wrap;">{{ pengaduan.isi_pengaduan }}</p>
+            <small class="text-muted">Dikirim pada: {{ pengaduan.tanggal_lapor.strftime('%d %b %Y, %H:%M') }}</small>
+        </div>
+    </div>
+
+    <div class="chat-history mb-3">
+        <h5>Percakapan dengan Pengelola</h5>
+        {% for t in tanggapan %}
+        <div class="chat-bubble {% if t.peran_pengirim == 'pengelola' %}from-other{% else %}from-me{% endif %}">
+            <strong>{{ t.nama_pengirim }} ({{ t.peran_pengirim.capitalize() }}):</strong>
+            <p class="mb-0" style="white-space: pre-wrap;">{{ t.isi_tanggapan }}</p>
+            <small class="text-muted">{{ t.tanggal_kirim.strftime('%d %b, %H:%M') }}</small>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pengaduan.status != 'Selesai' and pengaduan.status != 'Ditolak' %}
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="isi_balasan" class="form-label">Tulis Balasan Anda:</label>
+                    <textarea name="isi_balasan" id="isi_balasan" rows="5" class="form-control" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Kirim Balasan</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .chat-history {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 8px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .chat-bubble {
+        padding: 10px 15px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        max-width: 70%;
+    }
+    .from-other {
+        background-color: #f1f0f0;
+        align-self: flex-start;
+        margin-right: auto;
+    }
+    .from-me {
+        background-color: #0d6efd;
+        color: white;
+        margin-left: auto;
+    }
+</style>
+{% endblock %}

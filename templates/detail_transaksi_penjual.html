@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block title %}Detail Pesanan #{{ transaksi.id_transaksi }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <a href="{{ request.referrer or url_for('dashboard_penjual') }}" class="btn btn-secondary mb-3">&laquo; Kembali</a>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Detail Pesanan #{{ transaksi.id_transaksi }}</h3>
+            <span class="badge bg-info text-dark">{{ transaksi.status.replace('_', ' ').title() }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Informasi Pesanan</h5>
+                    <p><strong>Tanggal Pesan:</strong> {{ transaksi.tanggal_pesanan.strftime('%d %B %Y, %H:%M') }}</p>
+                    <p><strong>Metode Pembayaran:</strong> {{ transaksi.metode_pembayaran }}</p>
+                    <p><strong>Metode Pengiriman:</strong> {{ transaksi.metode_pengiriman }}</p>
+                    {% if transaksi.nomor_resi %}
+                        <p><strong>Nomor Resi:</strong> {{ transaksi.nomor_resi }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h5>Informasi Pembeli</h5>
+                    <p><strong>Nama:</strong> {{ transaksi.nama_pembeli }}</p>
+                    <p><strong>No. Telepon:</strong> {{ transaksi.no_telp }}</p>
+                    <p><strong>Alamat Pengiriman:</strong><br>{{ transaksi.alamat }}</p>
+                </div>
+            </div>
+            <hr>
+            <h5>Item yang Dipesan</h5>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produk</th>
+                        <th class="text-end">Harga Satuan</th>
+                        <th class="text-center">Kuantitas</th>
+                        <th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# --- PERBAIKAN ADA DI BARIS INI --- #}
+                    {% for item in transaksi['items'] %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td class="text-end">Rp {{ "{:,.0f}".format(item.harga_saat_beli) }}</td>
+                        <td class="text-center">{{ item.kuantitas }}</td>
+                        <td class="text-end">Rp {{ "{:,.0f}".format(item.harga_saat_beli * item.kuantitas) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="3" class="text-end">Total Pesanan</td>
+                        <td class="text-end">Rp {{ "{:,.0f}".format(transaksi.total_harga) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

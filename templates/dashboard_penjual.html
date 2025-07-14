@@ -30,6 +30,15 @@ block content %}
     </div>
   </div>
 
+  <div style="flex-grow: 1; margin-left: 20px">
+    <h4>{{ toko.nama_toko }}</h4>
+    <p class="text-muted">@{{ toko.username_toko }}</p>
+    <p>{{ toko.deskripsi_toko }}</p>
+    <a href="{{ url_for('edit_toko') }}" class="btn btn-secondary"
+      >Edit Profil Toko</a
+    >
+  </div>
+
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3>Manajemen Produk</h3>
@@ -77,9 +86,9 @@ block content %}
             </td>
             <td>
               {% if p.is_active %}
-                  <span class="badge bg-success">Aktif</span>
+              <span class="badge bg-success">Aktif</span>
               {% else %}
-                  <span class="badge bg-danger">Tidak Aktif</span>
+              <span class="badge bg-danger">Tidak Aktif</span>
               {% endif %}
             </td>
             <td>
@@ -158,4 +167,93 @@ block content %}
     {% endif %}
   </div>
 </div>
+
+<div class="card mt-4">
+    <div class="card-header">
+      <h3>Manajemen Retur Barang</h3>
+    </div>
+    <div class="card-body">
+      {% if daftar_retur %} {% for retur in daftar_retur %}
+      <div class="border rounded p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>Retur untuk Pesanan #{{ retur.id_transaksi }}</strong><br />
+            <small
+              >Diajukan oleh: {{ retur.nama_pembeli }} pada {{
+              retur.tanggal_ajuan.strftime('%d %b %Y') }}</small
+            >
+            <p class="mt-2 mb-1">
+              <strong>Alasan:</strong> {{ retur.alasan_retur }}
+            </p>
+            <strong>Item yang diretur:</strong>
+            <ul>
+              {% for item in retur.item_diretur_list %}
+              <li>{{ item.kuantitas }}x {{ item.product_name }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <span class="badge bg-info text-dark mb-2"
+              >{{ retur.status_retur }}</span
+            >
+          </div>
+        </div>
+
+        <hr />
+        <div class="d-flex justify-content-end">
+          {% if retur.status_retur == 'Diajukan' %}
+          <form
+            action="{{ url_for('update_status_retur', retur_id=retur.id_retur) }}"
+            method="POST"
+            class="d-inline"
+          >
+            <input type="hidden" name="action" value="setujui" />
+            <button type="submit" class="btn btn-success btn-sm me-2">
+              Setujui Retur
+            </button>
+          </form>
+          <form
+            action="{{ url_for('update_status_retur', retur_id=retur.id_retur) }}"
+            method="POST"
+            class="d-inline"
+          >
+            <input type="hidden" name="action" value="tolak" />
+            <button type="submit" class="btn btn-danger btn-sm">
+              Tolak Retur
+            </button>
+          </form>
+          {% elif retur.status_retur == 'Disetujui' %}
+          <form
+            action="{{ url_for('update_status_retur', retur_id=retur.id_retur) }}"
+            method="POST"
+            class="d-flex align-items-center"
+          >
+            <input type="hidden" name="action" value="kirim_ulang" />
+            <div class="input-group input-group-sm me-2">
+              <span class="input-group-text">Resi Baru:</span>
+              <input
+                type="text"
+                name="nomor_resi_baru"
+                class="form-control"
+                placeholder="Masukkan resi pengiriman ulang"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+              Kirim Ulang
+            </button>
+          </form>
+          {% elif retur.status_retur == 'Dikirim Ulang' %}
+          <p class="mb-0 text-muted">
+            Barang pengganti sedang dikirim dengan resi:
+            <strong>{{ retur.nomor_resi_baru }}</strong>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <p class="text-muted">Tidak ada permintaan retur saat ini.</p>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

@@ -1,0 +1,38 @@
+{% extends "layout.html" %} {% block title %}Riwayat Pengaduan Saya{% endblock
+%} {% block content %}
+<div class="container my-4">
+  <h2>Riwayat Pengaduan Saya</h2>
+  <hr />
+  {% if complaints %}
+  <div class="list-group">
+    {% for c in complaints %}
+    <a
+      href="{{ url_for('detail_pengaduan_user', pengaduan_id=c.id) }}"
+      class="list-group-item list-group-item-action flex-column align-items-start"
+    >
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">{{ c.subjek }}</h5>
+        <small>{{ c.tanggal_lapor.strftime('%d %b %Y') }}</small>
+      </div>
+      <p class="mb-1">
+        Status:
+        <span
+          class="badge {% if c.status == 'Selesai' %}bg-success {% elif c.status == 'Ditolak' %}bg-danger {% elif c.status == 'Diproses' %}bg-warning {% else %}bg-primary{% endif %}"
+        >
+          {{ c.status }}
+        </span>
+      </p>
+      <a
+        href="{{ url_for('chat_internal', pengaduan_id=c.id) }}"
+        class="btn btn-outline-secondary btn-sm mt-2"
+      >
+        <i class="fas fa-comments"></i> Diskusi Internal
+      </a>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted">Anda belum pernah membuat pengaduan.</p>
+  {% endif %}
+</div>
+{% endblock %}

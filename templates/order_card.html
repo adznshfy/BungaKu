@@ -27,23 +27,26 @@
     <div>
         {# Tombol-tombol aksi utama #}
         {% if order.status == 'menunggu_pembayaran' %}
-            <a href="{{ url_for('pembayaran', transaksi_id=order.id_transaksi) }}" class="btn btn-success btn-sm">
-                Bayar Sekarang
-            </a>
-        {% elif order.status == 'dikirim' %}
-            <form action="{{ url_for('terima_pesanan', transaksi_id=order.id_transaksi) }}" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-info btn-sm">Konfirmasi Terima Pesanan</button>
-            </form>
-        {% elif order.status == 'selesai' %}
-            <a href="{{ url_for('beri_rating', transaksi_id=order.id_transaksi) }}" class="btn btn-warning btn-sm">Beri Ulasan</a>
-        {% endif %}
+                <a href="{{ url_for('pembayaran', transaksi_id=order.id_transaksi) }}" class="btn btn-success btn-sm">Bayar Sekarang</a>
+            
+            {% elif order.status == 'dikirim' %}
+                <a href="{{ url_for('ajukan_retur', transaksi_id=order.id_transaksi) }}" class="btn btn-warning btn-sm">Ajukan Retur</a>
+                <form action="{{ url_for('terima_pesanan', transaksi_id=order.id_transaksi) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin menyelesaikan pesanan ini?')">
+                    <button type="submit" class="btn btn-success btn-sm ms-2">Pesanan Diterima</button>
+                </form>
 
-        {# Tombol Laporkan Masalah, selalu ada untuk pesanan yang aktif #}
-        {% if order.status not in ['dibatalkan', 'dibatalkan_sistem'] %}
-            <a href="{{ url_for('kirim_pengaduan', id_transaksi=order.id_transaksi) }}" class="btn btn-outline-danger btn-sm">
-                Laporkan Masalah
-            </a>
-        {% endif %}
+            {# BARU: Tombol konfirmasi penerimaan barang retur #}
+            {% elif order.status_retur == 'Dikirim Ulang' %}
+                <form action="{{ url_for('terima_barang_retur', retur_id=order.id_retur) }}" method="POST" class="d-inline" onsubmit="return confirm('Konfirmasi bahwa Anda telah menerima barang pengganti?')">
+                    <button type="submit" class="btn btn-primary btn-sm">Barang Retur Diterima</button>
+                </form>
+
+            {% elif order.status == 'selesai' and not order.has_rated %}
+                <a href="{{ url_for('beri_rating', transaksi_id=order.id_transaksi) }}" class="btn btn-primary btn-sm">Beri Ulasan</a>
+            
+            {% elif order.status not in ['dibatalkan', 'mengajukan_retur', 'retur_disetujui'] %}
+                 <a href="{{ url_for('kirim_pengaduan', id_transaksi=order.id_transaksi) }}" class="btn btn-outline-danger btn-sm">Laporkan Masalah</a>
+            {% endif %}
     </div>
     <div class="text-end">
         <strong>Total Pesanan: Rp {{ "{:,.0f}".format(order.total_harga) }}</strong>

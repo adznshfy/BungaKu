@@ -1,58 +1,128 @@
-{% extends "layout.html" %}
-{% block title %}Profil Saya{% endblock %}
-
-{% block content %}
+{% extends "layout.html" %} {% block title %}Profil Saya{% endblock %} {% block
+content %}
 <div class="container">
-    <h2>Profil Saya</h2>
-    
-    <form method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="foto">Foto Profil</label>
-            <input type="file" name="foto" id="foto" accept="image/*" class="form-control-file">
-        </div>
-        
-        <img id="foto-preview" class="profile-picture" 
-            style="margin-top: 10px; margin-bottom: 20px; width: 120px; height: 120px; border-radius: 50%; object-fit: cover;" 
-            src="{% if profile and profile.foto %}{{ url_for('static', filename='uploads/' + profile.foto) }}{% else %}{{ url_for('static', filename='images/default_profile.png') }}{% endif %}">
-       
-        <div class="form-group">
-            <label for="nama">Nama</label>
-            <input type="text" name="nama" id="nama" value="{{ profile.nama if profile else '' }}" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="no_telp">No Telepon</label>
-            <input type="text" name="no_telp" id="no_telp" value="{{ profile.no_telp if profile else '' }}" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="alamat">Alamat</label>
-            <textarea name="alamat" id="alamat" class="form-control" rows="3" required>{{ profile.alamat if profile else '' }}</textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-    </form>
-    
-    <hr>
+  <h2>Profil Saya</h2>
 
-    <hr>
-    <a href="{{ url_for('set_pin') }}" class="btn btn-warning">Atur / Ubah PIN Keamanan</a>
-
-    {# Tampilkan bagian ini HANYA jika user adalah PEMBELI (level 4) #}
-    {% if id_level == 4 %}
-    <div class="become-seller-section" style="margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; text-align: center;">
-        <h3>Ingin Menjual Bunga Anda?</h3>
-        <p>Bergabunglah dengan kami sebagai penjual dan jangkau lebih banyak pelanggan.</p>
-        <a href="{{ url_for('registrasi_penjual') }}" class="btn btn-success" style="padding: 10px 20px; font-size: 16px;">
-            Mulai Berjualan Sekarang
-        </a>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="foto">Foto Profil</label>
+      <input
+        type="file"
+        name="foto"
+        id="foto"
+        accept="image/*"
+        class="form-control-file"
+      />
     </div>
-    {% endif %}
-    
-    {# Tampilkan info ini jika user adalah PENJUAL (level 3) #}
-    {% if id_level == 3 %}
-    <div class="seller-info" style="margin-top: 30px; text-align: center; padding: 15px; background-color: #e8f5e9; border-radius: 8px;">
-        <p>Anda adalah seorang <strong>Penjual</strong>.</p>
-        <a href="{{ url_for('dashboard_penjual') }}" class="btn btn-info">Lihat dan Kelola Produk Anda</a>
-    </div>
-    {% endif %}
 
+    <img
+      id="foto-preview"
+      class="profile-picture"
+      style="
+        margin-top: 10px;
+        margin-bottom: 20px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+      "
+      src="{% if profile and profile.foto %}{{ url_for('static', filename='uploads/' + profile.foto) }}{% else %}{{ url_for('static', filename='images/default_profile.png') }}{% endif %}"
+    />
+
+    <div class="form-group">
+      <label for="nama">Nama</label>
+      <input
+        type="text"
+        name="nama"
+        id="nama"
+        value="{{ profile.nama if profile else '' }}"
+        class="form-control"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="no_telp">No Telepon</label>
+      <input
+        type="text"
+        name="no_telp"
+        id="no_telp"
+        value="{{ profile.no_telp if profile else '' }}"
+        class="form-control"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="alamat">Alamat</label>
+      <textarea
+        name="alamat"
+        id="alamat"
+        class="form-control"
+        rows="3"
+        required
+      >
+{{ profile.alamat if profile else '' }}</textarea
+      >
+    </div>
+    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+  </form>
+
+  <hr />
+
+  <a
+    href="{{ url_for('ganti_password') }}"
+    class="btn btn-danger"
+    style="margin-bottom: 10px; display: block"
+    >Ubah Password</a
+  >
+  <a
+    href="{{ url_for('set_pin') }}"
+    class="btn btn-warning"
+    style="display: block"
+    >Atur / Ubah PIN Keamanan</a
+  >
+
+  {# Tampilkan bagian ini HANYA jika user adalah PEMBELI (level 4) #} {% if
+  id_level == 4 %}
+  <div
+    class="become-seller-section"
+    style="
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      text-align: center;
+    "
+  >
+    <h3>Ingin Menjual Bunga Anda?</h3>
+    <p>
+      Bergabunglah dengan kami sebagai penjual dan jangkau lebih banyak
+      pelanggan.
+    </p>
+    <a
+      href="{{ url_for('registrasi_penjual') }}"
+      class="btn btn-success"
+      style="padding: 10px 20px; font-size: 16px"
+    >
+      Mulai Berjualan Sekarang
+    </a>
+  </div>
+  {% endif %} {# Tampilkan info ini jika user adalah PENJUAL (level 3) #} {% if
+  id_level == 3 %}
+  <div
+    class="seller-info"
+    style="
+      margin-top: 30px;
+      text-align: center;
+      padding: 15px;
+      background-color: #e8f5e9;
+      border-radius: 8px;
+    "
+  >
+    <p>Anda adalah seorang <strong>Penjual</strong>.</p>
+    <a href="{{ url_for('dashboard_penjual') }}" class="btn btn-info"
+      >Lihat dan Kelola Produk Anda</a
+    >
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

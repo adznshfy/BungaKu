@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block title %}Chat Internal: {{ pengaduan.subjek }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <a href="{{ url_for('dashboard_pengelola') if session.id_level == 2 else url_for('riwayat_pengaduan') }}" class="btn btn-secondary mb-3">&laquo; Kembali</a>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h4>Diskusi Internal untuk Pengaduan #{{ pengaduan.id }}</h4>
+            <p class="mb-0">"{{ pengaduan.subjek }}"</p>
+            {% if pengaduan.id_transaksi %}
+            <div class="mt-2 pt-2 border-top">
+                <p class="mb-0 small">
+                    Terkait Pesanan: 
+                    <a href="{{ url_for('detail_transaksi_penjual', transaksi_id=pengaduan.id_transaksi) }}">
+                        #{{ pengaduan.id_transaksi }}
+                    </a>
+                </p>
+            </div>
+        {% endif %}
+        </div>
+        <div class="card-body chat-history">
+            {% for chat in daftar_chat %}
+            <div class="chat-bubble {% if chat.peran_pengirim == 'pengelola' and session.id_level == 2 %}from-me{% elif chat.peran_pengirim == 'penjual' and session.id_level == 3 %}from-me{% else %}from-other{% endif %}">
+                <strong>{{ chat.nama_pengirim }} ({{ chat.peran_pengirim.capitalize() }}):</strong>
+                <p class="mb-0" style="white-space: pre-wrap;">{{ chat.isi_pesan }}</p>
+                <small class="text-muted">{{ chat.tanggal_kirim.strftime('%d %b, %H:%M') }}</small>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Belum ada percakapan. Mulailah diskusi.</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <form method="POST">
+                <div class="input-group">
+                    <textarea name="isi_pesan" class="form-control" placeholder="Ketik pesan Anda..." rows="3" required></textarea>
+                    <button class="btn btn-primary" type="submit">Kirim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-history { padding: 15px; max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; }
+    .chat-bubble { padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; max-width: 70%; }
+    .from-other { background-color: #f1f0f0; align-self: flex-start; margin-right: auto; }
+    .from-me { background-color: #dcf8c6; align-self: flex-end; margin-left: auto; }
+</style>
+{% endblock %}
