@@ -635,6 +635,18 @@ def dashboard_penjual():
     """, (user_id,))
     daftar_retur = cur.fetchall()
 
+    # 5. Parsing (membongkar) JSON item yang diretur menjadi list Python
+    for retur in daftar_retur:
+        if retur.get('item_diretur'):
+            try:
+                # Muat string JSON dari DB menjadi list/dictionary
+                retur['item_diretur_list'] = json.loads(retur['item_diretur'])
+            except (json.JSONDecodeError, TypeError):
+                # Jika ada error atau data kosong, buat list kosong
+                retur['item_diretur_list'] = []
+        else:
+            retur['item_diretur_list'] = []
+
     cur.close()
 
     return render_template("dashboard_penjual.html", 
