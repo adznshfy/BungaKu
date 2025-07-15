@@ -2114,50 +2114,85 @@ def proses_pembayaran(transaksi_id):
 def pembayaran_berhasil(transaksi_id):
     return render_template('pembayaran_berhasil.html', transaksi_id=transaksi_id)
 
-# GANTI SELURUH FUNGSI confirm_purchase() ANDA DENGAN INI
 @app.route('/confirm-purchase', methods=['POST'])
 def confirm_purchase():
     if 'id_user' not in session:
         return redirect(url_for('login'))
 
-    # --- INI BAGIAN LOGIKA YANG DIPERBAIKI ---
-    # Logika yang sama seperti di checkout() untuk menentukan sumber item
+    # Tentukan sumber item (Beli Sekarang atau Keranjang)
     items_to_purchase = session.get('buy_now_item', [])
     session_key_to_clear = 'buy_now_item'
-
     if not items_to_purchase:
         items_to_purchase = session.get('cart', [])
         session_key_to_clear = 'cart'
     
     if not items_to_purchase:
+        flash("Tidak ada item untuk dibeli.", "error")
         return redirect(url_for('home_buyer'))
-    # --- AKHIR PERBAIKAN LOGIKA ---
 
+    # Ambil data dari form
     shipping_method = request.form.get('shipping') 
     payment_method = request.form.get('payment')
+    kode_voucher = request.form.get('kode_voucher_terpilih')
     user_id = session['id_user']
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     try:
+        # Cek apakah user sudah punya PIN
         cur.execute("SELECT pin_hash FROM users WHERE id_user = %s", (user_id,))
         user_pin = cur.fetchone()
         if not user_pin or not user_pin['pin_hash']:
             flash("Anda harus mengatur PIN Keamanan di halaman profil sebelum melanjutkan checkout.", "error")
             cur.close()
-            return redirect(url_for('checkout'))
+            return redirect(url_for('profile'))
 
-        # Hitung total harga dari items_to_purchase
-        total_price = sum(item['price'] * item['quantity'] for item in items_to_purchase)
+        # === BLOK KALKULASI TOTAL HARGA YANG BENAR ===
+        
+        # 1. Hitung Subtotal Produk
+        subtotal_produk = sum(float(item['price']) * int(item['quantity']) for item in items_to_purchase)
 
-        # Buat record transaksi utama
+        # 2. Hitung Biaya Pengiriman (logika disamakan dengan di frontend)
+        shipping_cost = 0
+        if shipping_method:
+            if 'JNE' in shipping_method: shipping_cost = 15000
+            elif 'J&T' in shipping_method: shipping_cost = 16000
+            elif 'SiCepat' in shipping_method: shipping_cost = 18000
+            elif 'GoSend' in shipping_method: shipping_cost = 20000
+
+        # 3. Biaya Layanan (tetap)
+        service_fee = 1000
+
+        # 4. Hitung Diskon Voucher (jika ada)
+        discount_amount = 0
+        id_voucher_terpakai = None
+        if kode_voucher:
+            cur.execute("SELECT * FROM vouchers WHERE kode_voucher = %s AND (tgl_kadaluarsa IS NULL OR tgl_kadaluarsa >= CURDATE())", (kode_voucher,))
+            voucher = cur.fetchone()
+            if voucher:
+                id_voucher_terpakai = voucher['id']
+                if voucher['jenis_diskon'] == 'gratis_ongkir':
+                    discount_amount = min(shipping_cost, float(voucher['nilai_diskon']))
+                elif voucher['jenis_diskon'] == 'persen':
+                    discount_amount = (subtotal_produk * float(voucher['nilai_diskon'])) / 100
+                elif voucher['jenis_diskon'] == 'nominal':
+                    discount_amount = float(voucher['nilai_diskon'])
+
+        # 5. Hitung Grand Total
+        grand_total = (subtotal_produk + shipping_cost + service_fee) - discount_amount
+
+        # === AKHIR BLOK KALKULASI ===
+
+        # Buat record transaksi utama dengan harga yang sudah benar.
+        # Catatan: Pastikan tabel `transaksi` Anda memiliki kolom-kolom berikut:
+        # subtotal_produk, biaya_pengiriman, biaya_layanan, diskon, id_voucher_terpakai
         cur.execute("""
-            INSERT INTO transaksi (id_user, total_harga, status, expiry_time, metode_pengiriman, metode_pembayaran)
-            VALUES (%s, %s, %s, NOW() + INTERVAL 24 HOUR, %s, %s)
-        """, (user_id, total_price, 'menunggu_pembayaran', shipping_method, payment_method))
+            INSERT INTO transaksi (id_user, total_harga, status, expiry_time, metode_pengiriman, metode_pembayaran, subtotal_produk, biaya_pengiriman, biaya_layanan, diskon, id_voucher_terpakai)
+            VALUES (%s, %s, %s, NOW() + INTERVAL 24 HOUR, %s, %s, %s, %s, %s, %s, %s)
+        """, (user_id, grand_total, 'menunggu_pembayaran', shipping_method, payment_method, subtotal_produk, shipping_cost, service_fee, discount_amount, id_voucher_terpakai))
         
         transaksi_id = cur.lastrowid
 
-        # Pindahkan item dari items_to_purchase ke 'transaksi_items' dan potong stok
+        # Proses item dan potong stok
         for item in items_to_purchase:
             cur.execute("SELECT stok FROM product_variations WHERE id = %s FOR UPDATE", (item['variation_id'],))
             varian = cur.fetchone()
@@ -2172,7 +2207,6 @@ def confirm_purchase():
             """, (transaksi_id, item['product_id'], item['variation_id'], item['quantity'], item['price']))
 
         mysql.connection.commit()
-        # Hapus session yang benar setelah berhasil
         session.pop(session_key_to_clear, None)
         
         flash("Pesanan berhasil dibuat! Silakan selesaikan pembayaran.", "info")
@@ -2180,8 +2214,7 @@ def confirm_purchase():
 
     except Exception as e:
         mysql.connection.rollback()
-        flash(f"Terjadi kesalahan: {e}", "error")
-        # Jika gagal, kembali ke keranjang biasa
+        flash(f"Terjadi kesalahan saat memproses pesanan: {e}", "error")
         return redirect(url_for('cart'))
     finally:
         cur.close()
@@ -2831,7 +2864,6 @@ def detail_pengaduan_user(pengaduan_id):
     
     return render_template('detail_pengaduan_user.html', pengaduan=pengaduan, tanggapan=riwayat_tanggapan)
 
-# Ganti/tambahkan fungsi dashboard pimpinan Anda dengan yang ini
 @app.route('/dashboard-pimpinan')
 def dashboard_pimpinan():
     if 'id_user' not in session or session.get('id_level') != 5:
@@ -2840,7 +2872,6 @@ def dashboard_pimpinan():
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # 1. Ambil KPI Utama (Key Performance Indicators)
     cur.execute("SELECT SUM(total_harga) as total_pendapatan FROM transaksi WHERE status = 'selesai'")
     total_pendapatan = cur.fetchone()['total_pendapatan'] or 0
 
@@ -2860,7 +2891,6 @@ def dashboard_pimpinan():
         'total_produk': total_produk
     }
 
-    # 2. Ambil data untuk Chart Penjualan 7 Hari Terakhir
     cur.execute("""
         SELECT DATE(tanggal_pesanan) as tanggal, SUM(total_harga) as pendapatan_harian
         FROM transaksi WHERE status = 'selesai' AND tanggal_pesanan >= CURDATE() - INTERVAL 7 DAY
@@ -2870,7 +2900,6 @@ def dashboard_pimpinan():
     chart_labels = [item['tanggal'].strftime('%d %b') for item in penjualan_harian]
     chart_data = [float(item['pendapatan_harian']) for item in penjualan_harian]
 
-    # 3. Ambil data Top 5 Produk Terlaris
     cur.execute("""
         SELECT p.name, SUM(ti.kuantitas) as total_terjual FROM transaksi_items ti
         JOIN products p ON ti.id_produk = p.id JOIN transaksi t ON ti.id_transaksi = t.id_transaksi
@@ -2878,7 +2907,6 @@ def dashboard_pimpinan():
     """)
     top_produk = cur.fetchall()
 
-    # 4. Ambil data Top 5 Toko Rating Tertinggi
     cur.execute("""
         SELECT t.nama_toko, AVG(pr.rating) as rata_rating, COUNT(pr.id) as jumlah_ulasan
         FROM product_ratings pr JOIN products p ON pr.id_produk = p.id
@@ -2895,15 +2923,12 @@ def dashboard_pimpinan():
                            top_produk=top_produk,
                            top_toko=top_toko)
 
-# --- Tambahkan 2 fungsi untuk download laporan ---
-
 @app.route('/download-excel')
 def download_excel():
     if 'id_user' not in session or session.get('id_level') != 5:
         return redirect(url_for('login'))
         
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    # Ambil data transaksi yang sudah selesai untuk dilaporkan
     cur.execute("""
         SELECT id_transaksi, id_user, total_harga, status, metode_pengiriman, metode_pembayaran, tanggal_pesanan
         FROM transaksi WHERE status = 'selesai'
@@ -2911,7 +2936,6 @@ def download_excel():
     data = cur.fetchall()
     cur.close()
 
-    # Buat DataFrame dan konversi ke file Excel dalam memori
     df = pd.DataFrame(data)
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
@@ -2922,43 +2946,33 @@ def download_excel():
     return Response(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": "attachment;filename=laporan_penjualan.xlsx"})
 
-
-# Di dalam app.py
-
 @app.route('/download-pdf')
 def download_pdf():
-    # Penjaga keamanan
     if 'id_user' not in session or session.get('id_level') != 5:
         flash("Aksi tidak diizinkan.", "error")
         return redirect(url_for('login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    # 1. Ambil data transaksi yang sama seperti di laporan Excel
     cur.execute("""
         SELECT id_transaksi, total_harga, metode_pengiriman, metode_pembayaran, tanggal_pesanan
         FROM transaksi WHERE status = 'selesai'
     """)
     data_transaksi = cur.fetchall()
     
-    # Hitung total pendapatan untuk ditampilkan di footer PDF
     total_pendapatan = sum(item['total_harga'] for item in data_transaksi)
     
     cur.close()
 
-    # Siapkan data untuk dikirim ke template PDF
     tanggal_sekarang = datetime.now().strftime("%d %B %Y, %H:%M:%S")
     
-    # 2. Render template HTML yang sudah kita buat tadi menjadi sebuah string
     html_string = render_template('laporan_pdf.html', 
                                   data=data_transaksi, 
                                   total_pendapatan=total_pendapatan,
                                   tanggal_dibuat=tanggal_sekarang)
                                   
-    # 3. Buat file PDF dari string HTML tersebut menggunakan WeasyPrint
     pdf_file = HTML(string=html_string).write_pdf()
     
-    # 4. Kirim file PDF tersebut sebagai response untuk diunduh oleh browser
     return Response(pdf_file,
                     mimetype="application/pdf",
                     headers={"Content-Disposition": "attachment;filename=laporan_penjualan.pdf"})

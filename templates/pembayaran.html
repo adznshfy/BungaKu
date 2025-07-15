@@ -31,19 +31,14 @@ content %}
               }}</strong
             >
           </p>
-          {% if transaksi.metode_pembayaran and "transfer" in
-          transaksi.metode_pembayaran %}
+            {% if transaksi.metode_pembayaran and "transfer" in
+          transaksi.metode_pembayaran|lower %}
           <p>Silakan transfer ke nomor Virtual Account di bawah ini:</p>
           <h4 class="text-center bg-light p-2 rounded">8808 1234 5678 9012</h4>
-          <small class="text-muted">
-            (Contoh ini menggunakan nomor VA statis. Sistem nyata akan
-            meng-generate nomor unik.)</small
-          >
-
-          {# Perbaikan ada di sini: tambahkan 'transaksi.metode_pembayaran and'
-          #} {% elif transaksi.metode_pembayaran and ('OVO' in
-          transaksi.metode_pembayaran or 'GoPay' in transaksi.metode_pembayaran)
-          %}
+          
+          {% elif transaksi.metode_pembayaran and ('ovo' in
+          transaksi.metode_pembayaran|lower or 'gopay' in
+          transaksi.metode_pembayaran|lower) %}
           <p>
             Buka aplikasi {{ transaksi.metode_pembayaran }} Anda dan bayar
             menggunakan nomor di bawah ini:

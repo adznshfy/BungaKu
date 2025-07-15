@@ -53,6 +53,7 @@
           />
           <div id="profileDropdown" class="dropdown-menu">
             <a href="{{ url_for('profile') }}">Edit Profil</a>
+            <a href="{{ url_for('cart') }}">Keranjang</a>
             <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
             <a href="{{ url_for('wishlist') }}">Wishlist</a>
             <a href="{{ url_for('logout') }}">Keluar</a>
@@ -70,8 +71,6 @@
       {% elif session.get('id_level') in [3, 4] %}
       <a href="{{ url_for('home_buyer') }}">Home</a>
       <a href="{{ url_for('inbox') }}">Pesan</a>
-      <a href="{{ url_for('cart') }}">Keranjang</a>
-      <a href="{{ url_for('riwayat') }}">Riwayat Pembelian</a>
       <a href="{{ url_for('kirim_pengaduan') }}">Lapor/Pengaduan</a>
       <a href="{{ url_for('riwayat_pengaduan') }}">Riwayat Pengaduan</a>
       {% if session.get('id_level') == 3 %}
